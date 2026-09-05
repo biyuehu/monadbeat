@@ -1,0 +1,18 @@
+[project]
+name = "monadbeat"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi[standard]>=0.141.1",
+  "sqlmodel>=0.0.22",
+  "psycopg[binary]>=3.2.0",
+  "pydantic-settings>=2.6.0",
+]
+[dependency-groups]
+dev = ["pyright>=1.1.411", "ruff>=0.16.5"]
+[tool.ruff]
+indent-width = 2
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends"]
