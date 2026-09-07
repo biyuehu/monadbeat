@@ -22,4 +22,4 @@ app.include_router(submissions.router)
 
 @app.get("/")
 def read_root():
-  return {"name": "MonadBea2t"}
+  return {"name": "MonadBeat"}

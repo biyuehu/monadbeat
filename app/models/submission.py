@@ -9,4 +9,5 @@ class Submission(SQLModel, table=True):
   problem_id: int = Field(foreign_key="problem.id")
   user_answer: str
   is_correct: bool
+  judge_detail: str | None = None
   submitted_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

@@ -1,35 +1,59 @@
+from dataclasses import dataclass
+
 from app.judge.ghc_runner import ghc_typecheck
+from app.models.problem import (
+  FindFunctionConfig,
+  InferTypeConfig,
+  JudgeConfig,
+  PredictBehaviorConfig,
+)
 
 
-def type_annotation(judge_config: dict, user_answer: str) -> bool:
-  scaffold = judge_config["scaffold"]
-  full_code = scaffold.replace("{{USER_CODE}}", user_answer)
-  return ghc_typecheck(full_code)
+@dataclass
+class Correct:
+  pass
 
 
-def type_check_only(judge_config: dict, user_answer: str) -> bool:
-  scaffold = judge_config["scaffold"]
-  full_code = scaffold.replace("{{USER_CODE}}", user_answer)
-  return ghc_typecheck(
-    full_code
-  )  # TODO: 使用ADT建模 Correct | Incorrect | Wrong String
+@dataclass
+class Incorrect:
+  pass
 
 
-def multiple_choice(judge_config: dict, user_answer: str) -> bool:
-  return str(user_answer) == str(judge_config["correct_index"])
+@dataclass
+class Wrong:
+  detail: str
+
+
+JudgeResult = Correct | Incorrect | Wrong
+
+
+def type_check_only(
+  config: InferTypeConfig | FindFunctionConfig, user_answer: str
+) -> JudgeResult:
+  match ghc_typecheck(config.scaffold.replace("{{USER_CODE}}", user_answer)):
+    case None:
+      return Correct()
+    case detail:
+      return Wrong(detail)
+
+
+def multiple_choice(config: PredictBehaviorConfig, user_answer: str) -> JudgeResult:
+  return Correct() if str(user_answer) == str(config.correct_index) else Incorrect()
 
 
 JUDGE_HANDLERS = {
-  "type_annotation": type_annotation,
   "type_check_only": type_check_only,
   "multiple_choice": multiple_choice,
-  # quickcheck / resource_bounded: 后续接入沙箱执行时再补
 }
 
 
-def judge(problem_judge_config: dict, user_answer: str) -> bool:
-  check_method = problem_judge_config["check_method"]
-  handler = JUDGE_HANDLERS.get(check_method)
-  if handler is None:
-    raise ValueError(f"未实现的 check_method: {check_method}")
-  return handler(problem_judge_config, user_answer)
+def judge(config: JudgeConfig, user_answer: str) -> JudgeResult:
+  match config.problem_type:
+    case "infer_type":
+      return type_check_only(config, user_answer)
+    case "find_function":
+      return type_check_only(config, user_answer)
+    case "predict_behavior":
+      return multiple_choice(config, user_answer)
+    case "satisfy_law":
+      raise NotImplementedError
