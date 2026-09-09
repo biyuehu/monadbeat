@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
   jwt_secret: str = "dev-secret-change-me"
   jwt_algorithm: str = "HS256"
-  jwt_expire_minutes: int = 60 * 24 * 7  # 7 天
+  jwt_expire_minutes: int = 60 * 24 * 7
 
   site_url: str = "http://localhost:8000"
   github_client_id: str = ""

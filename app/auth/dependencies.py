@@ -14,15 +14,21 @@ def get_current_user(
   session: Session = Depends(get_session),
 ) -> User:
   if credentials is None:
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="未登录")
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authenticated"
+    )
 
   user_id = decode_access_token(credentials.credentials)
   if user_id is None:
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录已失效")
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED, detail="Access token is invalid"
+    )
 
   user = session.get(User, user_id)
   if user is None:
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在")
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+    )
 
   return user
 
@@ -41,5 +47,7 @@ def get_current_user_optional(
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
   if not user.is_admin:
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要管理员权限")
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN, detail="User is not an administrator"
+    )
   return user

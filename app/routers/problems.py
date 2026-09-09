@@ -14,11 +14,9 @@ def list_problems(
   page_size: int = 20,
   session: Session = Depends(get_session),
 ) -> ProblemListResponse:
-  base_query = select(Problem).where(Problem.is_published == True)  # noqa: E712
+  base_query = select(Problem).where(Problem.is_published == True)
 
-  total = session.exec(
-    select(func.count()).select_from(base_query.subquery())
-  ).one()
+  total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
 
   problems = session.exec(
     base_query.offset((page - 1) * page_size).limit(page_size)
