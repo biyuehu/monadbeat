@@ -37,3 +37,9 @@ class ProblemListItem(BaseModel):
   difficulty: int
   problem_type: str
   category: list[str]
+
+class ProblemListResponse(BaseModel):
+  items: list[ProblemListItem]
+  total: int
+  page: int
+  page_size: int

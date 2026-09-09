@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.db import get_session
-from app.dtos.problem import ProblemDetailResponse, ProblemListItem
+from app.dtos.problem import ProblemDetailResponse, ProblemListItem, ProblemListResponse
 from app.models.problem import Problem
 
 router = APIRouter(prefix="/problems", tags=["problems"])
@@ -13,23 +13,32 @@ def list_problems(
   page: int = 1,
   page_size: int = 20,
   session: Session = Depends(get_session),
-) -> list[ProblemListItem]:
+) -> ProblemListResponse:
+  base_query = select(Problem).where(Problem.is_published == True)  # noqa: E712
+
+  total = session.exec(
+    select(func.count()).select_from(base_query.subquery())
+  ).one()
+
   problems = session.exec(
-    select(Problem)
-    .where(Problem.is_published == True)
-    .offset((page - 1) * page_size)
-    .limit(page_size)
+    base_query.offset((page - 1) * page_size).limit(page_size)
   ).all()
-  return [
-    ProblemListItem(
-      slug=p.slug,
-      title=p.title,
-      difficulty=p.difficulty,
-      problem_type=p.problem_type,
-      category=p.category,
-    )
-    for p in problems
-  ]
+
+  return ProblemListResponse(
+    items=[
+      ProblemListItem(
+        slug=p.slug,
+        title=p.title,
+        difficulty=p.difficulty,
+        problem_type=p.problem_type,
+        category=p.category,
+      )
+      for p in problems
+    ],
+    total=total,
+    page=page,
+    page_size=page_size,
+  )
 
 
 @router.get("/{slug}")
