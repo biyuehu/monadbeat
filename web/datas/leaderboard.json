@@ -1,0 +1,9 @@
+{
+    "leaderboard": [
+        { "name": "hs_grandmaster", "solved": 5, "score": 500 },
+        { "name": "curry_lover",    "solved": 4, "score": 400 },
+        { "name": "lazy_eval",      "solved": 3, "score": 300 },
+        { "name": "JZWSBDEM",       "solved": 2, "score": 200 },
+        { "name": "eta_reduce",     "solved": 2, "score": 200 }
+    ]
+}

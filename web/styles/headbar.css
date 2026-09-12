@@ -1,0 +1,106 @@
+/* #region HEADBAR */
+.headbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 90;
+    background: rgb(69, 58, 98);
+    border-bottom: 1px solid #1a1a1a;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.25s ease, border-color 0.25s ease,
+                box-shadow 0.25s ease;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+body.has-headbar {
+    padding-top: 62px;
+}
+
+.headbar .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.headbar .mainLogo {
+    color: #7c5cbf;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.headbar .logoText {
+    font-size: 18px;
+    font-weight: 600;
+    color: #e0e0e0;
+    letter-spacing: -0.3px;
+}
+
+.headbar .gotoLinkFrame {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.headbar .gotoLink {
+    color: #777;
+    font-size: 14px;
+    text-decoration: none;
+    padding: 4px 12px;
+    transition: color 0.2s;
+}
+
+.headbar .gotoLink:hover {
+    color: #ccc;
+}
+
+.headbar .gotoLink.active {
+    color: #b380e6;
+}
+
+/* ===== 浅色主题 ===== */
+body.theme-light .headbar {
+    background: rgb(228, 222, 240);
+    border-bottom-color: #d8d0e8;
+    box-shadow: 0 6px 24px rgba(90, 70, 140, 0.10);
+}
+
+body.theme-light .headbar .logoText { color: #3b2f52; }
+body.theme-light .headbar .mainLogo { color: #7c5cbf; }
+
+body.theme-light .headbar .gotoLink { color: #8a8299; }
+body.theme-light .headbar .gotoLink:hover { color: #4b3a70; }
+body.theme-light .headbar .gotoLink.active { color: #7c5cbf; }
+
+/* ===== 响应式 ===== */
+@media (max-width: 768px) {
+    .headbar {
+        padding: 10px 16px;
+    }
+
+    .headbar .logoText {
+        font-size: 15px;
+    }
+
+    .headbar .gotoLink {
+        padding: 4px 8px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .headbar {
+        padding: 8px 12px;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    body.has-headbar {
+        padding-top: 84px;
+    }
+}
+/* #endregion */
