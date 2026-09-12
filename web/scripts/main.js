@@ -139,7 +139,7 @@
         for (var j = 0; j < items.length; j++) {
             (function (el) {
                 el.addEventListener('click', function () {
-                    window.location.href = '../pages/quiz.html?index=' + this.dataset.index;
+                    window.location.href = 'pages/quiz.html?index=' + this.dataset.index;
                 });
             })(items[j]);
         }

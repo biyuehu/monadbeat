@@ -8,18 +8,16 @@
             "avatar": "../assets/avatars/1.jpg",
             "uid": "F9946593-9CA5-4D67-8561-9A28B9A61BB3",
             "joined": "2026-9-12",
-            "solved": 4,
+            "solved": 2,
             "total": 5,
-            "score": 400,
-            "rank": 2,
-            "level": "Lv.4",
+            "score": 200,
+            "rank": 4,
+            "level": "Lv.2",
             "bio": "President of Republic of Narcissus",
             "lastActive": "",
             "done": [
                 1,
-                2,
-                3,
-                4
+                2
             ]
         },
         "hs_grandmaster": {
