@@ -42,7 +42,8 @@ async def github_callback(
     session.commit()
     session.refresh(user)
 
-  jwt_token = create_access_token(user.id)  # type: ignore[arg-type]
+  assert user.id is not None
+  jwt_token = create_access_token(user.id)
   return RedirectResponse(
     f"{settings.frontend_url}/auth/callback?token={jwt_token}"
   )  # TODO: frontend

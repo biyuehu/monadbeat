@@ -21,7 +21,7 @@ async def exchange_code_for_token(code: str) -> str:
     resp.raise_for_status()
     data = resp.json()
     if "access_token" not in data:
-      raise ValueError(f"GitHub OAuth 未返回 access_token: {data}")
+      raise ValueError(f"GitHub OAuth did not return of access_token: {data}")
     return data["access_token"]
 
 
