@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-from app.dtos.pagination import PaginatedResponse
-
 
 class LeaderboardItem(BaseModel):
   rank: int
@@ -11,4 +9,5 @@ class LeaderboardItem(BaseModel):
   solved_count: int
 
 
-LeaderboardResponse = PaginatedResponse[LeaderboardItem]
+class LeaderboardResponse(BaseModel):
+  items: list[LeaderboardItem]  # TODO
