@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaderboard</title>
+    <link rel="stylesheet" href="../styles/headbar.css" />
+    <link rel="stylesheet" href="../styles/leaderboard.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+    <!-- headbar 由 headbar.js 从 components/headbar.html 注入 -->
+
+    <div class="mainFrame">
+        <div class="terminal">
+
+            <div class="header">
+                <span class="title">Leaderboard</span>
+                <span class="subtitle">Leaderboard</span>
+            </div>
+
+            <div class="boardHead">
+                <span class="col-rank">#</span>
+                <span class="col-user">User</span>
+                <span class="col-solved">Solved</span>
+                <span class="col-score">Score</span>
+            </div>
+
+            <div class="board" id="board">
+                <div class="loading-text">Loading...</div>
+            </div>
+
+            <div class="footerLine">
+                <span>λ Monad Beat</span>
+                <span id="statusText">Haskell Practice</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../scripts/headbar.js"></script>
+    <script src="../scripts/leaderboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <link rel="stylesheet" href="../styles/headbar.css" />
+    <link rel="stylesheet" href="../styles/profile.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+    <!-- headbar 由 headbar.js 从 components/headbar.html 注入 -->
+
+    <div class="mainFrame">
+        <div class="terminal profileTerminal">
+
+            <aside class="profileSide">
+                <div class="profileAvatarWrap">
+                    <div class="profileAvatar" id="profileAvatar">
+                        <span class="profileAvatarFallback">λ</span>
+                    </div>
+                    <div class="profileName" id="profileName">Guest</div>
+                    <div class="profileEmail" id="profileEmail">--</div>
+                </div>
+
+                <nav class="profileNav" id="profileNav">
+                    <button type="button" class="profileNavBtn active" data-view="info">
+                        <span class="navIcon">👤</span>
+                        <span class="navText">Profile</span>
+                    </button>
+                    <button type="button" class="profileNavBtn" data-view="leaderboard">
+                        <span class="navIcon">🏆</span>
+                        <span class="navText">Leaderboard</span>
+                    </button>
+                    <button type="button" class="profileNavBtn" data-view="done">
+                        <span class="navIcon">✅</span>
+                        <span class="navText">Solved</span>
+                    </button>
+                    <button type="button" class="profileNavBtn" data-view="theme">
+                        <span class="navIcon">🎨</span>
+                        <span class="navText">Appearance</span>
+                    </button>
+                </nav>
+
+                <div class="profileLogoutWrap">
+                    <button type="button" class="profileLogoutBtn" id="logoutBtn">
+                        <span class="navIcon">⎋</span>
+                        <span class="navText">Log out</span>
+                    </button>
+                </div>
+            </aside>
+
+            <section class="profileContent" id="profileContent"></section>
+
+        </div>
+    </div>
+
+    <script src="../scripts/headbar.js"></script>
+    <script src="../scripts/profile.js"></script>
+</body>
+</html>

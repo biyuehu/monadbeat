@@ -1,0 +1,62 @@
+{
+  "quiz": [
+    {
+      "id": 1,
+      "problem_type": "infer_type",
+      "judge_config": {
+        "check_method": "type_annotation",
+        "display_snippet": "f = Map.filterWithKey",
+        "scaffold": "import qualified Data.Map as Map\nf = {{USER_CODE}}",
+        "correct_signature": "(k -> a -> Bool) -> Map k a -> Map k a",
+        "hint": "filterWithKey 接受一个谓词函数和一个 Map，返回过滤后的 Map。"
+      }
+    },
+    {
+      "id": 2,
+      "problem_type": "find_function",
+      "judge_config": {
+        "check_method": "type_check_only",
+        "display_snippet": "target :: [Int] -> [Int]",
+        "scaffold": "import Data.List (sortOn)\ntarget :: [Int] -> [Int]\ntarget = {{USER_CODE}}",
+        "correct_code": "sortOn negate",
+        "hint": "使用 sortOn 配合 negate 可以实现按值从大到小排序。"
+      }
+    },
+    {
+      "id": 3,
+      "problem_type": "predict_behavior",
+      "judge_config": {
+        "check_method": "single_choice",
+        "display_code": "xs = 1 : 2 : error \"boom\" : []\nresult = take 2 xs",
+        "question": "下面这段代码执行会发生什么？",
+        "options": ["抛出异常 \"boom\"", "正常返回 [1, 2]", "编译错误"],
+        "correct_index": 1,
+        "hint": "take 2 只取前两个元素，error \"boom\" 在第三个位置，不会被求值。"
+      }
+    },
+    {
+      "id": 4,
+      "problem_type": "satisfy_law",
+      "judge_config": {
+        "check_method": "quickcheck",
+        "display_snippet": "data Box a = Box a",
+        "scaffold": "data Box a = Box a deriving (Show, Eq)\ninstance Arbitrary a => Arbitrary (Box a) where\n  arbitrary = fmap Box arbitrary\n\ninstance Functor Box where\n  fmap = {{USER_CODE}}",
+        "correct_code": "fmap f (Box a) = Box (f a)",
+        "hint": "Functor 的 fmap 需要保持结构，对内部值应用函数。",
+        "question": "请实现 Functor instance，使其满足 Functor laws："
+      }
+    },
+    {
+      "id": 5,
+      "problem_type": "fix_laziness",
+      "judge_config": {
+        "check_method": "behavior_test",
+        "display_snippet": "sumList :: [Int] -> Int\nsumList = foldl (+) 0",
+        "scaffold": "sumList :: [Int] -> Int\nsumList = {{USER_CODE}}",
+        "correct_code": "foldr (+) 0",
+        "hint": "foldl 在长列表上可能造成栈溢出，使用 foldr 或 foldl' 可以避免。",
+        "question": "下面这个函数在处理长列表时会有问题，请修复它："
+      }
+    }
+  ]
+}

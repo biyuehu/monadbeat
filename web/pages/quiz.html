@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz</title>
+    <link rel="stylesheet" href="../styles/headbar.css" />
+    <link rel="stylesheet" href="../styles/quiz.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+    <!-- headbar 由 headbar.js 从 components/headbar.html 注入 -->
+
+    <div class="mainFrame">
+        <div class="terminal">
+
+            <div class="header">
+                <span class="title" id="pageTitle">✏️ QUESTION</span>
+                <span class="progressInfo" id="progressInfo">1 / 5</span>
+            </div>
+
+            <div class="questionArea">
+                <span class="questionLabel" id="questionLabel">📌 WRITING: </span>
+                <div class="codeBlock" id="codeBlock">
+                    <span class="comment"></span><br />
+                    <span class="function"></span> <span class="operator">::</span> <span class="comment">-- fill in here →</span>
+                </div>
+            </div>
+
+            <!-- Input area -->
+            <div class="typeSignatureArea" id="inputArea">
+                <span class="typeSignatureLabel" id="inputLabel">✏️ INPUT: </span>
+                <div class="typeInputWrapper">
+                    <span class="typeInputPrefix" id="typeInputPrefix">filterWithKey ::</span>
+                    <input type="text" class="typeInput" id="typeInput" placeholder="(k -> a -> Bool) -> Map k a -> Map k a" autofocus />
+                </div>
+            </div>
+
+            <!-- Choice area -->
+            <div class="choiceArea" id="choiceArea" style="display:none;">
+                <span class="choiceLabel" id="choiceLabel">Choose one option:</span>
+                <div class="choiceOptions" id="choiceOptions"></div>
+            </div>
+
+            <!-- Submit area -->
+            <div class="submitArea">
+                <button class="submitBtn secondary" id="resetBtn">↻ Reset</button>
+                <button class="submitBtn" id="submitBtn">✓ Submit</button>
+            </div>
+
+            <!-- Feedback -->
+            <div id="feedbackContainer"></div>
+
+            <!-- Footer -->
+            <div class="footerLine">
+                <span>λ Monad Beat</span>
+                <span id="statusText">Haskell Practice</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../scripts/headbar.js"></script>
+    <script src="../scripts/quiz.js"></script>
+</body>
+</html>

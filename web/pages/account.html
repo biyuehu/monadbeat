@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account</title>
+    <link rel="stylesheet" href="../styles/account.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+    <div class="mainFrame">
+        <div class="terminal">
+
+            <div class="welcomeBlock">
+                <h1 class="welcomeTitle" id="welcomeTitle">WELCOME</h1>
+                <p class="welcomeLine" id="welcomeLine1">Hello, dear visitor.</p>
+                <p class="welcomeLine" id="welcomeLine2">A quiet place for Haskell practice.</p>
+                <p class="welcomeLine" id="welcomeLine3">Sign in to keep track of every question you solve.</p>
+            </div>
+
+            <div class="accountBox">
+
+                <!-- ===== 登录表单 ===== -->
+                <form class="accountForm" id="loginForm" novalidate>
+                    <label class="field">
+                        <span class="fieldLabel">Username</span>
+                        <input type="text" class="fieldInput" id="loginUsername" name="username"
+                               placeholder="your username" autocomplete="username" required />
+                        <span class="fieldError" id="loginUsernameError"></span>
+                    </label>
+
+                    <label class="field">
+                        <span class="fieldLabel">Password</span>
+                        <input type="password" class="fieldInput" id="loginPassword" name="password"
+                               placeholder="••••••••" autocomplete="current-password" required />
+                        <span class="fieldError" id="loginPasswordError"></span>
+                    </label>
+
+                    <div class="formMsg" id="loginMsg"></div>
+
+                    <div class="formFooter">
+                        <button type="button" class="linkBtn" id="toSignup">No account? Sign up</button>
+                        <button type="submit" class="primaryBtn">Sign in</button>
+                    </div>
+                </form>
+
+                <!-- ===== 注册表单 ===== -->
+                <form class="accountForm hidden" id="signupForm" novalidate>
+                    <label class="field">
+                        <span class="fieldLabel">Name</span>
+                        <input type="text" class="fieldInput" id="signupName" name="name"
+                               placeholder="your name" autocomplete="nickname" required />
+                        <span class="fieldError" id="signupNameError"></span>
+                    </label>
+
+                    <label class="field">
+                        <span class="fieldLabel">Email</span>
+                        <input type="email" class="fieldInput" id="signupEmail" name="email"
+                               placeholder="you@example.com" autocomplete="email" required />
+                        <span class="fieldError" id="signupEmailError"></span>
+                    </label>
+
+                    <label class="field">
+                        <span class="fieldLabel">Password</span>
+                        <input type="password" class="fieldInput" id="signupPassword" name="password"
+                               placeholder="at least 6 characters" autocomplete="new-password" required />
+                        <span class="fieldError" id="signupPasswordError"></span>
+                    </label>
+
+                    <label class="field">
+                        <span class="fieldLabel">Captcha</span>
+                        <div class="captchaRow">
+                            <input type="text" class="fieldInput" id="signupCaptcha" name="captcha"
+                                   placeholder="type the letters" autocomplete="off"
+                                   maxlength="4" required />
+                            <canvas class="captchaCanvas" id="captchaCanvas" width="120" height="40"
+                                    title="Click to refresh"></canvas>
+                        </div>
+                        <span class="fieldError" id="signupCaptchaError"></span>
+                    </label>
+
+                    <div class="formMsg" id="signupMsg"></div>
+
+                    <div class="formFooter">
+                        <button type="button" class="linkBtn" id="toLogin">Already have an account? Sign in</button>
+                        <button type="submit" class="primaryBtn">Create account</button>
+                    </div>
+                </form>
+
+            </div>
+
+            <div class="footerLine">
+                <span>λ Monad Beat</span>
+                <span>Haskell Practice</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../scripts/account.js"></script>
+</body>
+</html>
