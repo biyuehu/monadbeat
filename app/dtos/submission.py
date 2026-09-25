@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.dtos.pagination import PaginatedResponse
+
 
 class SubmitRequest(BaseModel):
   problem_id: int
@@ -24,8 +26,4 @@ class SubmissionListItem(BaseModel):
   judge_detail: str | None
   submitted_at: datetime
 
-class SubmissionListResponse(BaseModel):
-  items: list[SubmissionListItem]
-  total: int
-  page: int
-  page_size: int
+SubmissionListResponse = PaginatedResponse[SubmissionListItem]

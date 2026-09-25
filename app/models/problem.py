@@ -49,7 +49,7 @@ def _to_display(config: JudgeConfig):
     case PredictBehaviorConfig(display_code=c, options=opts):
       return ChoiceDisplay(problem_type=config.problem_type, code=c, options=opts)
     case SatisfyLawConfig():
-      raise NotImplementedError("satisfy_law 展示逻辑暂未实现")
+      raise NotImplementedError("satisfy_law display is not implemented yet")
 
 
 class Problem(SQLModel, table=True):

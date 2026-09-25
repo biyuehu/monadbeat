@@ -2,6 +2,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
+from app.dtos.pagination import PaginatedResponse
+
 
 class TextDisplay(BaseModel):
   problem_type: Literal["infer_type", "find_function"]
@@ -38,8 +40,4 @@ class ProblemListItem(BaseModel):
   problem_type: str
   category: list[str]
 
-class ProblemListResponse(BaseModel):
-  items: list[ProblemListItem]
-  total: int
-  page: int
-  page_size: int
+ProblemListResponse = PaginatedResponse[ProblemListItem]

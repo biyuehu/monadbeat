@@ -1,6 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, func, select
 
 from app.auth.dependencies import get_current_user
@@ -12,12 +10,13 @@ from app.dtos.submission import (
   SubmitRequest,
 )
 from app.judge.dispatcher import Correct, Wrong, judge
+from app.limiter import limiter
 from app.models.problem import Problem
 from app.models.submission import Submission
 from app.models.user import User
+from app.services.leaderboard import leaderboard_cache
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("/")
@@ -36,10 +35,10 @@ def list_submissions(
 
   total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
 
-  rows = session.exec(base_query.offset((page - 1) * page_size).limit(page_size)).all()
-
   items = []
-  for submission, title in rows:
+  for submission, title in session.exec(
+    base_query.offset((page - 1) * page_size).limit(page_size)
+  ).all():
     assert submission.id is not None
     items.append(
       SubmissionListItem(
@@ -61,7 +60,6 @@ def list_submissions(
 @router.post("/")
 @limiter.limit("10/minute")
 def submit(
-  request: Request,
   body: SubmitRequest,
   user: User = Depends(get_current_user),
   session: Session = Depends(get_session),
@@ -82,6 +80,9 @@ def submit(
   session.add(submission)
   session.commit()
   session.refresh(submission)
+
+  if submission.is_correct:
+    leaderboard_cache.refresh_user(session, user.id)
 
   assert submission.id is not None
   return SubmissionResponse(
