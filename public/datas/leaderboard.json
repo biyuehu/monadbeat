@@ -1,0 +1,9 @@
+{
+  "leaderboard": [
+    { "rank": 1, "username": "hs_grandmaster", "avatar_url": "/assets/avatars/2.jpg", "score": 500, "solved_count": 5 },
+    { "rank": 2, "username": "curry_lover", "avatar_url": "/assets/avatars/3.jpg", "score": 400, "solved_count": 4 },
+    { "rank": 3, "username": "lazy_eval", "avatar_url": "/assets/avatars/4.jpg", "score": 300, "solved_count": 3 },
+    { "rank": 4, "username": "JZWSBDEM", "avatar_url": "/assets/avatars/1.jpg", "score": 200, "solved_count": 2 },
+    { "rank": 5, "username": "eta_reduce", "avatar_url": null, "score": 200, "solved_count": 2 }
+  ]
+}

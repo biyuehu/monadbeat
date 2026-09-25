@@ -1,0 +1,50 @@
+{
+  "problems": [
+    {
+      "id": 1,
+      "slug": "map-filterwithkey",
+      "title": "Identify the type of Map.filterWithKey",
+      "difficulty": 2,
+      "problem_type": "infer_type",
+      "category": ["Data.Map", "higher-order"],
+      "remark": null,
+      "is_published": true,
+      "judge_config": {
+        "problem_type": "infer_type",
+        "scaffold": "import qualified Data.Map as Map\nf = {{USER_CODE}}",
+        "display_snippet": "f = Map.filterWithKey"
+      }
+    },
+    {
+      "id": 2,
+      "slug": "sort-descending",
+      "title": "Sort a list in descending order",
+      "difficulty": 2,
+      "problem_type": "find_function",
+      "category": ["Data.List", "sorting"],
+      "remark": null,
+      "is_published": true,
+      "judge_config": {
+        "problem_type": "find_function",
+        "scaffold": "import Data.List (sortOn)\ntarget :: [Int] -> [Int]\ntarget = {{USER_CODE}}",
+        "display_snippet": "target :: [Int] -> [Int]"
+      }
+    },
+    {
+      "id": 3,
+      "slug": "laziness-take-error",
+      "title": "Laziness with take and error",
+      "difficulty": 1,
+      "problem_type": "predict_behavior",
+      "category": ["laziness", "evaluation"],
+      "remark": null,
+      "is_published": true,
+      "judge_config": {
+        "problem_type": "predict_behavior",
+        "display_code": "xs = 1 : 2 : error \"boom\" : []\nresult = take 2 xs",
+        "options": ["throw exception \"boom\"", "return [1, 2] normally", "compile error"],
+        "correct_index": 1
+      }
+    }
+  ]
+}

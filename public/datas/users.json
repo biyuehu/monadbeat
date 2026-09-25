@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "github_id": "jzwsbdem",
+      "username": "JZWSBDEM",
+      "avatar_url": "/assets/avatars/1.jpg",
+      "is_admin": false,
+      "created_at": "2026-09-12T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "github_id": "hs-grandmaster",
+      "username": "hs_grandmaster",
+      "avatar_url": "/assets/avatars/2.jpg",
+      "is_admin": true,
+      "created_at": "2023-01-08T00:00:00Z"
+    },
+    {
+      "id": 3,
+      "github_id": "curry-lover",
+      "username": "curry_lover",
+      "avatar_url": "/assets/avatars/3.jpg",
+      "is_admin": false,
+      "created_at": "2023-04-11T00:00:00Z"
+    },
+    {
+      "id": 4,
+      "github_id": "lazy-eval",
+      "username": "lazy_eval",
+      "avatar_url": "/assets/avatars/4.jpg",
+      "is_admin": false,
+      "created_at": "2023-09-19T00:00:00Z"
+    },
+    {
+      "id": 5,
+      "github_id": "eta-reduce",
+      "username": "eta_reduce",
+      "avatar_url": null,
+      "is_admin": false,
+      "created_at": "2024-03-05T00:00:00Z"
+    }
+  ]
+}
