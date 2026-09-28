@@ -1,4 +1,5 @@
-import { Effect } from 'effect'
+import { Effect, flow } from 'effect'
+import { constant } from 'effect/Function'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { RouteTitle } from '../components/RouteTitle'
 import { useAuth } from '../context/auth'
@@ -24,10 +25,10 @@ export const ProfileRoute = (): JSX.Element => {
 
   Effect.runPromise(fetchProblems)
     .then(setProblems)
-    .catch(() => setProblems([]))
+    .catch(flow(constant([]), setProblems))
   Effect.runPromise(fetchProgress)
     .then(setProgress)
-    .catch(() => setProgress([]))
+    .catch(flow(constant([]), setProgress))
 
   const myProgress = (): Progress[] => {
     const user = auth.user

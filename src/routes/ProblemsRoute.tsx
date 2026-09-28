@@ -1,5 +1,5 @@
 import { useNavigate } from '@solidjs/router'
-import { Effect } from 'effect'
+import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { FilterPanel } from '../components/FilterPanel'
 import { RouteTitle } from '../components/RouteTitle'
@@ -19,9 +19,7 @@ export const ProblemsRoute = (): JSX.Element => {
   const [filterOpen, setFilterOpen] = createSignal(false)
   const [search, setSearch] = createSignal('')
 
-  Effect.runPromise(fetchProblems)
-    .then(setProblems)
-    .catch((e) => setError(String(e)))
+  Effect.runPromise(fetchProblems).then(setProblems).catch(flow(String, setError))
 
   const visible = (): Problem[] =>
     problems()

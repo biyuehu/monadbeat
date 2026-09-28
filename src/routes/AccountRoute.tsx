@@ -6,7 +6,12 @@ import { useAuth } from '../context/auth'
 import { fetchUsers, findUserByName } from '../lib/api'
 
 type Mode = 'login' | 'signup'
-type FieldErrors = { name?: string; email?: string; password?: string; captcha?: string }
+interface FieldErrors {
+  name?: string
+  email?: string
+  password?: string
+  captcha?: string
+}
 type FormMessage = { kind: 'ok' | 'error' | 'info'; text: string } | null
 
 const CAPTCHA_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'

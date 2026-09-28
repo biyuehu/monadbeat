@@ -1,4 +1,4 @@
-import { Effect } from 'effect'
+import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { RouteTitle } from '../components/RouteTitle'
 import { useAuth } from '../context/auth'
@@ -10,9 +10,7 @@ export const LeaderboardRoute = (): JSX.Element => {
   const [entries, setEntries] = createSignal<readonly LeaderboardEntry[]>([])
   const [error, setError] = createSignal<string | null>(null)
 
-  Effect.runPromise(fetchLeaderboard)
-    .then(setEntries)
-    .catch((e) => setError(String(e)))
+  Effect.runPromise(fetchLeaderboard).then(setEntries).catch(flow(String, setError))
 
   const rowClass = (entry: LeaderboardEntry): string => {
     const rankClass = entry.rank === 1 ? 'top1' : entry.rank === 2 ? 'top2' : entry.rank === 3 ? 'top3' : ''

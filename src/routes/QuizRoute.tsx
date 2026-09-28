@@ -1,11 +1,13 @@
 import { useNavigate, useParams } from '@solidjs/router'
-import { Effect } from 'effect'
+import { Effect, flow } from 'effect'
 import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
 import { RouteTitle } from '../components/RouteTitle'
 import { fetchProblems } from '../lib/api'
 import type { FindFunctionConfig, InferTypeConfig, PredictBehaviorConfig, Problem } from '../lib/schema'
 
 type Feedback = { kind: 'ok' | 'error' | 'info'; text: string }
+
+const errorFeedback = (text: string): Feedback => ({ kind: 'error', text })
 
 const escapeHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -80,7 +82,7 @@ export const QuizRoute = (): JSX.Element => {
 
   Effect.runPromise(fetchProblems)
     .then(setProblems)
-    .catch((e) => setFeedback({ kind: 'error', text: String(e) }))
+    .catch(flow(String, errorFeedback, setFeedback))
 
   createEffect(() => {
     const idParam = params.id

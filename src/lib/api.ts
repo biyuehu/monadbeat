@@ -1,4 +1,4 @@
-import { Effect, Schema } from 'effect'
+import { Effect, flow, Schema } from 'effect'
 import {
   type LeaderboardEntry,
   LeaderboardFile,
@@ -21,7 +21,7 @@ const fetchJson = (path: string): Effect.Effect<unknown, Error> =>
 const decode =
   <A, I>(schema: Schema.Schema<A, I>) =>
   (input: unknown): Effect.Effect<A, Error> =>
-    Schema.decodeUnknown(schema)(input).pipe(Effect.mapError((e) => new Error(String(e))))
+    Schema.decodeUnknown(schema)(input).pipe(Effect.mapError(flow(String, (s) => new Error(s))))
 
 export const fetchProblems: Effect.Effect<readonly Problem[], Error> = fetchJson('/datas/quiz.json').pipe(
   Effect.flatMap(decode(ProblemFile)),
