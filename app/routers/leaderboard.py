@@ -1,14 +1,17 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlmodel import Session
 
+from app.config import settings
+from app.db import get_session
 from app.dtos.leaderboard import LeaderboardItem, LeaderboardResponse
-from app.services.leaderboard import leaderboard_cache
+from app.services.leaderboard import compute_leaderboard
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
 
 @router.get("/")
-def get_leaderboard(limit: int = 50) -> LeaderboardResponse:
-  entries = leaderboard_cache.top(limit)
+def get_leaderboard(session: Session = Depends(get_session)) -> LeaderboardResponse:
+  entries = compute_leaderboard(session, limit=settings.leaderboard_max_entries)
   return LeaderboardResponse(
     items=[
       LeaderboardItem(

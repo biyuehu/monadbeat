@@ -1,28 +1,26 @@
 from contextlib import asynccontextmanager
+from typing import cast
 
 from fastapi import FastAPI
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from sqlmodel import Session
+from starlette.types import ExceptionHandler
 
-from app.db import engine, init_db
+from app.db import init_db
 from app.limiter import limiter
 from app.routers import auth, leaderboard, problems, submissions, user
-from app.services.leaderboard import leaderboard_cache
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
   init_db()
-  with Session(engine) as session:
-    leaderboard_cache.warm_up(session)
   yield
 
 
 app = FastAPI(title="MonadBeat", lifespan=lifespan)
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, cast(ExceptionHandler, _rate_limit_exceeded_handler))
 
 app.include_router(auth.router)
 app.include_router(user.router)

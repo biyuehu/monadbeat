@@ -10,4 +10,4 @@ class LeaderboardItem(BaseModel):
 
 
 class LeaderboardResponse(BaseModel):
-  items: list[LeaderboardItem]  # TODO
+  items: list[LeaderboardItem]
