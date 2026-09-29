@@ -1,9 +1,11 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, TypeAdapter
-from sqlalchemy import ARRAY, JSON, Column, String
+from pydantic import BaseModel, Field, TypeAdapter, model_validator
+from sqlalchemy import ARRAY, JSON, CheckConstraint, Column, String
 from sqlmodel import Field as SQLField
 from sqlmodel import SQLModel
+
+PROBLEM_TYPES: tuple[str, ...] = ("infer_type", "find_function", "predict_behavior")
 
 
 class InferTypeConfig(BaseModel):
@@ -25,17 +27,18 @@ class PredictBehaviorConfig(BaseModel):
   correct_index: int
 
 
-class SatisfyLawConfig(BaseModel):
-  problem_type: Literal["satisfy_law"] = "satisfy_law"
-  scaffold: str
-  display_snippet: str
-  success_marker: str = "PASS"
-  time_limit_sec: int = 10
-  memory_limit_mb: int = 200
+# class SatisfyLawConfig(BaseModel):
+#   problem_type: Literal["satisfy_law"] = "satisfy_law"
+#   scaffold: str
+#   display_snippet: str
+#   success_marker: str = "PASS"
+#   time_limit_sec: int = 10
+#   memory_limit_mb: int = 200
 
 
 JudgeConfig = Annotated[
-  InferTypeConfig | FindFunctionConfig | PredictBehaviorConfig | SatisfyLawConfig,
+  InferTypeConfig | FindFunctionConfig | PredictBehaviorConfig,
+  # | SatisfyLawConfig
   Field(discriminator="problem_type"),
 ]
 
@@ -48,11 +51,19 @@ def _to_display(config: JudgeConfig):
       return TextDisplay(problem_type=config.problem_type, code=s)
     case PredictBehaviorConfig(display_code=c, options=opts):
       return ChoiceDisplay(problem_type=config.problem_type, code=c, options=opts)
-    case SatisfyLawConfig():
-      raise NotImplementedError("satisfy_law display is not implemented yet")
+    # case SatisfyLawConfig():
+    #   raise NotImplementedError("satisfy_law display is not implemented yet")
 
 
 class Problem(SQLModel, table=True):
+  __table_args__ = (
+    CheckConstraint("difficulty BETWEEN 1 AND 5", name="ck_problem_difficulty"),
+    CheckConstraint(
+      "problem_type IN ('infer_type', 'find_function', 'predict_behavior')",
+      name="ck_problem_type",
+    ),
+  )
+
   id: int | None = SQLField(default=None, primary_key=True)
   slug: str = SQLField(unique=True, index=True)
   title: str
@@ -70,6 +81,17 @@ class Problem(SQLModel, table=True):
   @judge_config.setter
   def judge_config(self, value: JudgeConfig) -> None:
     self.judge_config_raw = value.model_dump()
+
+  @model_validator(mode="after")
+  def _check_consistency(self) -> "Problem":
+    config_type = self.judge_config_raw.get("problem_type")
+    if self.problem_type != config_type:
+      raise ValueError(
+        f"problem_type mismatch: column={self.problem_type!r} config={config_type!r}"
+      )
+    if self.difficulty not in (1, 2, 3, 4, 5):
+      raise ValueError(f"difficulty out of range: {self.difficulty!r}")
+    return self
 
   def to_detail_response(self):
     from app.dtos.problem import ProblemDetailResponse

@@ -41,12 +41,6 @@ def multiple_choice(config: PredictBehaviorConfig, user_answer: str) -> JudgeRes
   return Correct() if str(user_answer) == str(config.correct_index) else Incorrect()
 
 
-JUDGE_HANDLERS = {
-  "type_check_only": type_check_only,
-  "multiple_choice": multiple_choice,
-}
-
-
 def judge(config: JudgeConfig, user_answer: str) -> JudgeResult:
   match config.problem_type:
     case "infer_type":
@@ -55,5 +49,5 @@ def judge(config: JudgeConfig, user_answer: str) -> JudgeResult:
       return type_check_only(config, user_answer)
     case "predict_behavior":
       return multiple_choice(config, user_answer)
-    case "satisfy_law":
-      raise NotImplementedError
+    # case "satisfy_law":
+    #   raise NotImplementedError
