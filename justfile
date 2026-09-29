@@ -1,7 +1,7 @@
 set windows-shell := ["powershell"]
 
 dev:
-  uv run fastapi dev
+  uv run uvicorn app.main:app --reload
 
 lint:
   uv run ruff check --fix .
