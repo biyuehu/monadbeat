@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+import httpx
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
@@ -26,8 +27,11 @@ def github_login() -> RedirectResponse:
 async def github_callback(
   code: str, session: Session = Depends(get_session)
 ) -> RedirectResponse:
-  access_token = await exchange_code_for_token(code)
-  gh_user = await fetch_github_user(access_token)
+  try:
+    access_token = await exchange_code_for_token(code)
+    gh_user = await fetch_github_user(access_token)
+  except httpx.HTTPError as exc:
+    raise HTTPException(status_code=502, detail=f"github oauth failed: {exc}") from exc
 
   github_id = str(gh_user["id"])
   user = session.exec(select(User).where(User.github_id == github_id)).first()

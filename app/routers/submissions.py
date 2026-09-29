@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, func, select
 
 from app.auth.dependencies import get_current_user
+from app.config import settings
 from app.db import get_session
 from app.dtos.submission import (
   SubmissionListItem,
@@ -14,7 +15,6 @@ from app.limiter import limiter
 from app.models.problem import Problem
 from app.models.submission import Submission
 from app.models.user import User
-from app.services.leaderboard import leaderboard_cache
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
@@ -58,14 +58,15 @@ def list_submissions(
 
 
 @router.post("/")
-@limiter.limit("10/minute")
+@limiter.limit(settings.submit_rate_limit)
 def submit(
+  request: Request,
   body: SubmitRequest,
   user: User = Depends(get_current_user),
   session: Session = Depends(get_session),
 ) -> SubmissionResponse:
   problem: Problem | None = session.get(Problem, body.problem_id)
-  if problem is None:
+  if problem is None or not problem.is_published:
     raise HTTPException(status_code=404, detail="Problem not found")
 
   result = judge(problem.judge_config, body.user_answer)
@@ -80,9 +81,6 @@ def submit(
   session.add(submission)
   session.commit()
   session.refresh(submission)
-
-  if submission.is_correct:
-    leaderboard_cache.refresh_user(session, user.id)
 
   assert submission.id is not None
   return SubmissionResponse(

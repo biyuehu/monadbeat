@@ -43,7 +43,9 @@ def list_problems(
 def get_problem(
   slug: str, session: Session = Depends(get_session)
 ) -> ProblemDetailResponse:
-  problem = session.exec(select(Problem).where(Problem.slug == slug)).first()
+  problem = session.exec(
+    select(Problem).where(Problem.slug == slug, Problem.is_published == True)
+  ).first()
   if problem is None:
     raise HTTPException(status_code=404, detail="Problem not found")
   return problem.to_detail_response()

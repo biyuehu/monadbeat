@@ -12,7 +12,15 @@ def ghc_typecheck(source: str) -> str | None:
 
     try:
       result = subprocess.run(
-        [settings.ghc_binary, "-fno-code", "-fforce-recomp", str(tmpfile)],
+        [
+          settings.ghc_binary,
+          "-fno-code",
+          "-fforce-recomp",
+          str(tmpfile),
+          "+RTS",
+          f"-M{settings.ghc_memory_mb}m",
+          "-RTS",
+        ],
         capture_output=True,
         text=True,
         timeout=settings.ghc_timeout_sec,

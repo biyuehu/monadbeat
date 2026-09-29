@@ -3,7 +3,10 @@ from sqlmodel import Session, SQLModel, create_engine
 from app.config import settings
 
 engine = create_engine(
-  settings.database_url, echo=False, connect_args={"connect_timeout": 7}
+  settings.database_url,
+  echo=False,
+  connect_args={"connect_timeout": 7},
+  pool_pre_ping=True,
 )
 
 

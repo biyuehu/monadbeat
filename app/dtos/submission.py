@@ -1,13 +1,14 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from app.config import settings
 from app.dtos.pagination import PaginatedResponse
 
 
 class SubmitRequest(BaseModel):
   problem_id: int
-  user_answer: str
+  user_answer: str = Field(max_length=settings.max_answer_length)
 
 
 class SubmissionResponse(BaseModel):
