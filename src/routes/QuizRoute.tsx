@@ -1,9 +1,10 @@
 import { useNavigate, useParams } from '@solidjs/router'
 import { Effect, flow } from 'effect'
-import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { createSignal, For, type JSX, Show } from 'solid-js'
 import { RouteTitle } from '../components/RouteTitle'
-import { fetchProblems } from '../lib/api'
-import type { FindFunctionConfig, InferTypeConfig, PredictBehaviorConfig, Problem } from '../lib/schema'
+import { useAuth } from '../context/auth'
+import { fetchProblemDetail, fetchProblems, submitAnswer } from '../lib/api'
+import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../lib/types'
 
 type Feedback = { kind: 'ok' | 'error' | 'info'; text: string }
 
@@ -18,7 +19,7 @@ const highlight = (code: string): string =>
     .replace(/\b(import|qualified|as|instance|data|deriving|where|class|type)\b/g, '<span class="keyword">$1</span>')
     .replace(/\b([a-z][A-Za-z0-9_']*)\b(?=\s*[=(])/g, '<span class="function">$1</span>')
 
-const headerOf = (problem: Problem): string => {
+const headerOf = (problem: ProblemDetail): string => {
   switch (problem.problem_type) {
     case 'infer_type':
       return '✏️ Type Signature'
@@ -26,10 +27,12 @@ const headerOf = (problem: Problem): string => {
       return '🔍 Function Implementation'
     case 'predict_behavior':
       return '🎯 Behavior Prediction'
+    default:
+      return '✏️ Question'
   }
 }
 
-const labelOf = (problem: Problem): string => {
+const labelOf = (problem: ProblemDetail): string => {
   switch (problem.problem_type) {
     case 'infer_type':
       return '📌 Write the type signature of the function below:'
@@ -37,69 +40,62 @@ const labelOf = (problem: Problem): string => {
       return '📌 Implement a function that matches the following type signature:'
     case 'predict_behavior':
       return 'What happens when the following code runs?'
+    default:
+      return '📌 Question:'
   }
 }
 
-const prefixOf = (problem: Problem): string => {
+const prefixOf = (problem: ProblemDetail): string => {
   switch (problem.problem_type) {
     case 'infer_type':
       return 'f ::'
     case 'find_function':
       return 'target = '
-    case 'predict_behavior':
+    default:
       return ''
   }
 }
 
-const codeOf = (problem: Problem): string => {
-  switch (problem.problem_type) {
-    case 'infer_type':
-      return (problem.judge_config as InferTypeConfig).display_snippet
-    case 'find_function': {
-      const cfg = problem.judge_config as FindFunctionConfig
-      return `${cfg.display_snippet}\n\n${cfg.scaffold.replace('{{USER_CODE}}', '-- implement here')}`
-    }
-    case 'predict_behavior':
-      return (problem.judge_config as PredictBehaviorConfig).display_code
-  }
-}
-
-const optionsOf = (problem: Problem): readonly string[] =>
-  problem.problem_type === 'predict_behavior' ? (problem.judge_config as PredictBehaviorConfig).options : []
-
-const correctIndexOf = (problem: Problem): number =>
-  problem.problem_type === 'predict_behavior' ? (problem.judge_config as PredictBehaviorConfig).correct_index : -1
+const isChoice = (display: Display): display is ChoiceDisplay => display.problem_type === 'predict_behavior'
+const isText = (display: Display): display is TextDisplay =>
+  display.problem_type === 'infer_type' || display.problem_type === 'find_function'
 
 export const QuizRoute = (): JSX.Element => {
   const navigate = useNavigate()
-  const params = useParams<{ id: string }>()
-  const [problems, setProblems] = createSignal<readonly Problem[]>([])
-  const [currentId, setCurrentId] = createSignal<number | null>(null)
+  const params = useParams<{ slug: string }>()
+  const { state: auth } = useAuth()
+  const [problem, setProblem] = createSignal<ProblemDetail | null>(null)
+  const [list, setList] = createSignal<readonly ProblemListItem[]>([])
   const [answer, setAnswer] = createSignal('')
   const [selected, setSelected] = createSignal(-1)
   const [feedback, setFeedback] = createSignal<Feedback | null>(null)
   const [submitting, setSubmitting] = createSignal(false)
 
-  Effect.runPromise(fetchProblems)
-    .then(setProblems)
-    .catch(flow(String, errorFeedback, setFeedback))
+  const load = (slug: string): void => {
+    setProblem(null)
+    setFeedback(null)
+    setAnswer('')
+    setSelected(-1)
+    Effect.runPromise(fetchProblemDetail(slug))
+      .then(setProblem)
+      .catch(flow(String, errorFeedback, setFeedback))
+  }
 
-  createEffect(() => {
-    const idParam = params.id
-    const list = problems()
-    const id = idParam !== undefined ? Number(idParam) : Number.NaN
-    const fallback = list[0]?.id ?? null
-    setCurrentId(Number.isFinite(id) ? id : fallback)
-  })
+  Effect.runPromise(fetchProblems())
+    .then(setList)
+    .catch(() => setList([]))
 
-  const current = (): Problem | undefined => problems().find((p) => p.id === currentId())
+  Effect.runPromise(Effect.sync(() => params.slug))
+    .then((slug) => (slug === undefined ? navigate('/') : load(slug)))
+    .catch(() => navigate('/'))
 
   const goNext = (): void => {
-    const list = problems()
-    const idx = list.findIndex((p) => p.id === currentId())
-    const next = list[idx + 1]
+    const slug = problem()?.slug
+    if (slug === undefined) return
+    const idx = list().findIndex((p) => p.slug === slug)
+    const next = list()[idx + 1]
     if (next === undefined) navigate('/')
-    else navigate(`/quiz/${next.id}`)
+    else navigate(`/quiz/${next.slug}`)
   }
 
   const reset = (): void => {
@@ -109,34 +105,55 @@ export const QuizRoute = (): JSX.Element => {
   }
 
   const submit = (): void => {
-    const problem = current()
-    if (problem === undefined || submitting()) return
-    setSubmitting(true)
-    if (problem.problem_type === 'predict_behavior') {
+    const p = problem()
+    const token = auth.token
+    if (p === null || submitting()) return
+    if (token === null) {
+      setFeedback({ kind: 'error', text: '❌ Sign in required.' })
+      return
+    }
+    if (p.problem_type === 'predict_behavior') {
       if (selected() === -1) {
         setFeedback({ kind: 'info', text: '⚠️ Please choose an option!' })
-        setSubmitting(false)
         return
       }
-      const ok = selected() === correctIndexOf(problem)
-      setFeedback({ kind: ok ? 'ok' : 'error', text: ok ? '✅ Correct! Moving on...' : '❌ Try again.' })
-      if (ok) setTimeout(goNext, 700)
-      setSubmitting(false)
-      return
-    }
-    if (answer().trim() === '') {
+    } else if (answer().trim() === '') {
       setFeedback({ kind: 'info', text: '⚠️ Please enter your answer!' })
-      setSubmitting(false)
       return
     }
-    // TODO: replace with backend POST /submissions once ready
-    setFeedback({ kind: 'error', text: '❌ Grading not wired to backend yet.' })
-    setSubmitting(false)
+
+    const userAnswer = p.problem_type === 'predict_behavior' ? String(selected()) : answer()
+    setSubmitting(true)
+    Effect.runPromise(submitAnswer(p.slug, userAnswer, token))
+      .then((res) => {
+        if (res.is_correct) {
+          setFeedback({ kind: 'ok', text: '✅ Correct! Moving on...' })
+          setTimeout(goNext, 700)
+        } else {
+          setFeedback({ kind: 'error', text: `❌ ${res.judge_detail ?? 'Try again.'}` })
+        }
+      })
+      .catch((err) => setFeedback({ kind: 'error', text: `❌ ${String(err)}` }))
+      .finally(() => setSubmitting(false))
+  }
+
+  const codeOf = (p: ProblemDetail): string => {
+    const d = p.display
+    if (isText(d) || isChoice(d)) return d.code
+    return ''
+  }
+
+  const progressText = (): string => {
+    const p = problem()
+    if (p === null) return ''
+    const idx = list().findIndex((q) => q.slug === p.slug)
+    const total = list().length
+    return total > 0 && idx >= 0 ? `${idx + 1} / ${total}` : ''
   }
 
   return (
     <Show
-      when={current() !== undefined}
+      when={problem() !== null}
       fallback={
         <div class="mainFrame">
           <RouteTitle>Quiz</RouteTitle>
@@ -147,30 +164,28 @@ export const QuizRoute = (): JSX.Element => {
       }
     >
       {(() => {
-        const problem = current() as Problem
+        const p = problem() as ProblemDetail
         return (
           <div class="mainFrame">
             <RouteTitle>Quiz</RouteTitle>
             <div class="terminal">
               <div class="header">
-                <span class="title">{headerOf(problem)}</span>
-                <span class="progressInfo">
-                  {problems().findIndex((p) => p.id === problem.id) + 1} / {problems().length}
-                </span>
+                <span class="title">{headerOf(p)}</span>
+                <span class="progressInfo">{progressText()}</span>
               </div>
 
               <div class="questionArea">
-                <span class="questionLabel">{labelOf(problem)}</span>
-                <div class="codeBlock" innerHTML={highlight(codeOf(problem))} />
+                <span class="questionLabel">{labelOf(p)}</span>
+                <div class="codeBlock" innerHTML={highlight(codeOf(p))} />
               </div>
 
               <Show
-                when={problem.problem_type !== 'predict_behavior'}
+                when={p.problem_type !== 'predict_behavior'}
                 fallback={
                   <div class="choiceArea">
                     <span class="choiceLabel">Choose one option:</span>
                     <div class="choiceOptions">
-                      <For each={optionsOf(problem)}>
+                      <For each={isChoice(p.display) ? p.display.options : []}>
                         {(opt, i) => (
                           <button
                             type="button"
@@ -190,7 +205,7 @@ export const QuizRoute = (): JSX.Element => {
                 <div class="typeSignatureArea">
                   <span class="typeSignatureLabel">✏️ Input:</span>
                   <div class="typeInputWrapper">
-                    <span class="typeInputPrefix">{prefixOf(problem)}</span>
+                    <span class="typeInputPrefix">{prefixOf(p)}</span>
                     <input
                       type="text"
                       class="typeInput"

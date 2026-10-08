@@ -3,8 +3,8 @@ import { constant } from 'effect/Function'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { RouteTitle } from '../components/RouteTitle'
 import { useAuth } from '../context/auth'
-import { fetchProblems, fetchProgress } from '../lib/api'
-import type { Problem, Progress } from '../lib/schema'
+import { fetchProblems, fetchSubmissions } from '../lib/api'
+import type { ProblemListItem, SubmissionListItem } from '../lib/types'
 import { applyTheme, theme } from '../lib/theme'
 
 type View = 'info' | 'done' | 'theme'
@@ -20,31 +20,34 @@ const stars = (difficulty: number): string => Array.from({ length: 3 }, (_, i) =
 export const ProfileRoute = (): JSX.Element => {
   const { state: auth, signOut } = useAuth()
   const [view, setView] = createSignal<View>('info')
-  const [progress, setProgress] = createSignal<readonly Progress[]>([])
-  const [problems, setProblems] = createSignal<readonly Problem[]>([])
+  const [submissions, setSubmissions] = createSignal<readonly SubmissionListItem[]>([])
+  const [problems, setProblems] = createSignal<readonly ProblemListItem[]>([])
 
-  Effect.runPromise(fetchProblems)
+  Effect.runPromise(fetchProblems())
     .then(setProblems)
     .catch(flow(constant([]), setProblems))
-  Effect.runPromise(fetchProgress)
-    .then(setProgress)
-    .catch(flow(constant([]), setProgress))
 
-  const myProgress = (): Progress[] => {
-    const user = auth.user
-    if (user === null) return []
-    return progress().filter((p) => p.user_id === user.id)
+  const loadSubmissions = (): void => {
+    const token = auth.token
+    if (token === null) {
+      setSubmissions([])
+      return
+    }
+    Effect.runPromise(fetchSubmissions(token))
+      .then(setSubmissions)
+      .catch(flow(constant([]), setSubmissions))
   }
 
-  const solvedCount = (): number => myProgress().filter((p) => p.status === 'solved').length
+  loadSubmissions()
 
-  const doneProblems = (): Problem[] => {
-    const solvedIds = new Set(
-      myProgress()
-        .filter((p) => p.status === 'solved')
-        .map((p) => p.problem_id)
-    )
-    return problems().filter((p) => solvedIds.has(p.id))
+  const solvedSlugs = (): Set<string> =>
+    new Set(submissions().filter((s) => s.is_correct).map((s) => s.problem_slug))
+
+  const solvedCount = (): number => solvedSlugs().size
+
+  const doneProblems = (): ProblemListItem[] => {
+    const slugs = solvedSlugs()
+    return problems().filter((p) => slugs.has(p.slug))
   }
 
   return (
@@ -59,7 +62,7 @@ export const ProfileRoute = (): JSX.Element => {
               </Show>
             </div>
             <div class="profileName">{auth.user?.username ?? 'Guest'}</div>
-            <div class="profileEmail">{auth.user?.github_id ?? '--'}</div>
+            <div class="profileEmail">{auth.user?.username ?? '--'}</div>
           </div>
 
           <nav class="profileNav">
@@ -69,7 +72,10 @@ export const ProfileRoute = (): JSX.Element => {
                   type="button"
                   class="profileNavBtn"
                   classList={{ active: view() === item.key }}
-                  onClick={() => setView(item.key)}
+                  onClick={() => {
+                    setView(item.key)
+                    if (item.key === 'done') loadSubmissions()
+                  }}
                 >
                   <span class="navIcon">{item.icon}</span>
                   <span class="navText">{item.label}</span>
@@ -79,13 +85,7 @@ export const ProfileRoute = (): JSX.Element => {
           </nav>
 
           <div class="profileLogoutWrap">
-            <button
-              type="button"
-              class="profileLogoutBtn"
-              onClick={() => {
-                signOut()
-              }}
-            >
+            <button type="button" class="profileLogoutBtn" onClick={() => signOut()}>
               <span class="navIcon">⎋</span>
               <span class="navText">Log out</span>
             </button>
@@ -109,10 +109,6 @@ export const ProfileRoute = (): JSX.Element => {
               <div class="infoGrid">
                 <div class="infoKey">Username</div>
                 <div class="infoVal mono">{auth.user?.username}</div>
-                <div class="infoKey">Github ID</div>
-                <div class="infoVal mono">{auth.user?.github_id}</div>
-                <div class="infoKey">User ID</div>
-                <div class="infoVal mono">{auth.user?.id}</div>
                 <div class="infoKey">Joined</div>
                 <div class="infoVal">{auth.user?.created_at}</div>
                 <div class="infoKey">Admin</div>
@@ -137,7 +133,7 @@ export const ProfileRoute = (): JSX.Element => {
                 {(problem) => (
                   <div class="doneRow">
                     <span class="doneCheck">✓</span>
-                    <span class="doneId">#{problem.id}</span>
+                    <span class="doneId">{problem.slug}</span>
                     <span class="doneTitle">{problem.title}</span>
                     <span class="doneType">{problem.problem_type}</span>
                     <span class="doneStars">{stars(problem.difficulty)}</span>

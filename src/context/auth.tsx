@@ -1,34 +1,51 @@
 import { createContext, type JSX, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import type { User } from '../lib/schema'
-import { clearCurrentUser, readCurrentUser, writeCurrentUser } from '../lib/storage'
+import {
+  clearCurrentUser,
+  clearToken,
+  readCurrentUser,
+  readToken,
+  writeCurrentUser,
+  writeToken
+} from '../lib/storage'
+import type { MeResponse } from '../lib/types'
 
 type AuthStore = {
-  user: User | null
+  user: MeResponse | null
+  token: string | null
 }
 
 type AuthContextValue = {
   state: AuthStore
-  signIn: (user: User) => void
+  signIn: (user: MeResponse, token: string) => void
   signOut: () => void
 }
 
 const AuthContext = createContext<AuthContextValue>()
 
+const readStoredUser = (): MeResponse | null =>
+  readCurrentUser().pipe((o) => (o._tag === 'Some' ? o.value : null))
+
+const readStoredToken = (): string | null =>
+  readToken().pipe((o) => (o._tag === 'Some' ? o.value : null))
+
 export const AuthProvider = (props: { children: JSX.Element }): JSX.Element => {
   const [state, setState] = createStore<AuthStore>({
-    user: readCurrentUser().pipe((o) => (o._tag === 'Some' ? o.value : null))
+    user: readStoredUser(),
+    token: readStoredToken()
   })
 
   const value: AuthContextValue = {
     state,
-    signIn: (user) => {
+    signIn: (user, token) => {
       writeCurrentUser(user)
-      setState('user', user)
+      writeToken(token)
+      setState({ user, token })
     },
     signOut: () => {
       clearCurrentUser()
-      setState('user', null)
+      clearToken()
+      setState({ user: null, token: null })
     }
   }
 

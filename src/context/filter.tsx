@@ -1,6 +1,6 @@
 import { createContext, type JSX, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import { type ProblemType, ProblemTypeOrder } from '../lib/schema'
+import { type ProblemType, ProblemTypeOrder } from '../lib/types'
 
 type FilterStore = Record<ProblemType, boolean>
 

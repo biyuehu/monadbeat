@@ -1,60 +1,56 @@
-import { Effect, flow, Schema } from 'effect'
-import {
-  type LeaderboardEntry,
-  LeaderboardFile,
-  type Problem,
-  ProblemFile,
-  type Progress,
-  ProgressFile,
-  type Submission,
-  SubmissionFile,
-  type User,
-  UsersFile
-} from './schema'
+import { Effect } from 'effect'
+import type {
+  LeaderboardItem,
+  MeResponse,
+  ProblemDetail,
+  ProblemListItem,
+  SubmissionListItem,
+  SubmissionResponse
+} from './types'
 
-const fetchJson = (path: string): Effect.Effect<unknown, Error> =>
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
+
+const asError = (cause: unknown): Error => (cause instanceof Error ? cause : new Error(String(cause)))
+
+const fetchJson = <A>(path: string, init?: RequestInit): Effect.Effect<A, Error> =>
   Effect.tryPromise({
-    try: () => fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status} ${path}`)))),
-    catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause)))
+    try: () =>
+      fetch(`${API_BASE}${path}`, init).then((r) =>
+        r.ok ? (r.json() as Promise<A>) : Promise.reject(new Error(`HTTP ${r.status} ${path}`))
+      ),
+    catch: asError
   })
 
-const decode =
-  <A, I>(schema: Schema.Schema<A, I>) =>
-  (input: unknown): Effect.Effect<A, Error> =>
-    Schema.decodeUnknown(schema)(input).pipe(Effect.mapError(flow(String, (s) => new Error(s))))
+const authInit = (token: string, init?: RequestInit): RequestInit => ({
+  ...init,
+  headers: { ...init?.headers, Authorization: `Bearer ${token}` }
+})
 
-export const fetchProblems: Effect.Effect<readonly Problem[], Error> = fetchJson('/datas/quiz.json').pipe(
-  Effect.flatMap(decode(ProblemFile)),
-  Effect.map((f) => f.problems)
-)
+export const fetchProblems = (): Effect.Effect<readonly ProblemListItem[], Error> =>
+  fetchJson<{ items: ProblemListItem[] }>('/problems/').pipe(Effect.map((r) => r.items))
 
-export const fetchUsers: Effect.Effect<readonly User[], Error> = fetchJson('/datas/users.json').pipe(
-  Effect.flatMap(decode(UsersFile)),
-  Effect.map((f) => f.users)
-)
+export const fetchProblemDetail = (slug: string): Effect.Effect<ProblemDetail, Error> =>
+  fetchJson<ProblemDetail>(`/problems/${encodeURIComponent(slug)}`)
 
-export const fetchProgress: Effect.Effect<readonly Progress[], Error> = fetchJson('/datas/progress.json').pipe(
-  Effect.flatMap(decode(ProgressFile)),
-  Effect.map((f) => f.progress)
-)
+export const fetchLeaderboard = (): Effect.Effect<readonly LeaderboardItem[], Error> =>
+  fetchJson<{ items: LeaderboardItem[] }>('/leaderboard/').pipe(Effect.map((r) => r.items))
 
-export const fetchSubmissions: Effect.Effect<readonly Submission[], Error> = fetchJson('/datas/submissions.json').pipe(
-  Effect.flatMap(decode(SubmissionFile)),
-  Effect.map((f) => f.submissions)
-)
+export const fetchMe = (token: string): Effect.Effect<MeResponse, Error> =>
+  fetchJson<MeResponse>('/me', authInit(token))
 
-export const fetchLeaderboard: Effect.Effect<readonly LeaderboardEntry[], Error> = fetchJson(
-  '/datas/leaderboard.json'
-).pipe(
-  Effect.flatMap(decode(LeaderboardFile)),
-  Effect.map((f) => f.leaderboard)
-)
+export const fetchSubmissions = (token: string): Effect.Effect<readonly SubmissionListItem[], Error> =>
+  fetchJson<{ items: SubmissionListItem[] }>('/submissions/', authInit(token)).pipe(Effect.map((r) => r.items))
 
-export const findUserByName = (username: string): Effect.Effect<User | undefined, Error> =>
-  fetchUsers.pipe(Effect.map((users) => users.find((u) => u.username === username)))
-
-export const progressForUser = (userId: number): Effect.Effect<readonly Progress[], Error> =>
-  fetchProgress.pipe(Effect.map((rows) => rows.filter((p) => p.user_id === userId)))
-
-export const submissionsForUser = (userId: number): Effect.Effect<readonly Submission[], Error> =>
-  fetchSubmissions.pipe(Effect.map((rows) => rows.filter((s) => s.user_id === userId)))
+export const submitAnswer = (
+  slug: string,
+  answer: string,
+  token: string
+): Effect.Effect<SubmissionResponse, Error> =>
+  fetchJson<SubmissionResponse>(
+    '/submissions/',
+    authInit(token, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ problem_slug: slug, user_answer: answer })
+    })
+  )

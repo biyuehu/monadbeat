@@ -6,7 +6,7 @@ import { RouteTitle } from '../components/RouteTitle'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
 import { fetchProblems } from '../lib/api'
-import { type Problem, ProblemTypeLabel, ProblemTypeOrder } from '../lib/schema'
+import { isProblemType, type ProblemListItem, ProblemTypeLabel, ProblemTypeOrder } from '../lib/types'
 
 const stars = (difficulty: number): string => Array.from({ length: 3 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
 
@@ -14,16 +14,16 @@ export const ProblemsRoute = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
   const { state: filter, isFiltering } = useFilter()
-  const [problems, setProblems] = createSignal<readonly Problem[]>([])
+  const [problems, setProblems] = createSignal<readonly ProblemListItem[]>([])
   const [error, setError] = createSignal<string | null>(null)
   const [filterOpen, setFilterOpen] = createSignal(false)
   const [search, setSearch] = createSignal('')
 
-  Effect.runPromise(fetchProblems).then(setProblems).catch(flow(String, setError))
+  Effect.runPromise(fetchProblems()).then(setProblems).catch(flow(String, setError))
 
-  const visible = (): Problem[] =>
+  const visible = (): ProblemListItem[] =>
     problems()
-      .filter((p) => filter[p.problem_type])
+      .filter((p) => isProblemType(p.problem_type) && filter[p.problem_type])
       .filter((p) => p.title.toLowerCase().includes(search().toLowerCase()))
 
   return (
@@ -98,12 +98,14 @@ export const ProblemsRoute = (): JSX.Element => {
           <div class="problem-grid">
             <For each={visible()}>
               {(problem) => (
-                <button type="button" class="problemItem" onClick={() => navigate(`/quiz/${problem.id}`)}>
+                <button type="button" class="problemItem" onClick={() => navigate(`/quiz/${problem.slug}`)}>
                   <span class="p-status">○</span>
-                  <span class="p-id">{problem.id}</span>
+                  <span class="p-id">{problem.slug}</span>
                   <span class="p-title">{problem.title}</span>
                   <div class="p-tags">
-                    <span class="p-tag">{ProblemTypeLabel[problem.problem_type]}</span>
+                    <span class="p-tag">
+                      {isProblemType(problem.problem_type) ? ProblemTypeLabel[problem.problem_type] : problem.problem_type}
+                    </span>
                   </div>
                   <span class="p-diff">Difficulty: {stars(problem.difficulty)}</span>
                   <span class="p-state undo">Todo</span>

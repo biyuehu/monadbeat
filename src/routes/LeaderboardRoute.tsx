@@ -3,16 +3,16 @@ import { createSignal, For, type JSX, Show } from 'solid-js'
 import { RouteTitle } from '../components/RouteTitle'
 import { useAuth } from '../context/auth'
 import { fetchLeaderboard } from '../lib/api'
-import type { LeaderboardEntry } from '../lib/schema'
+import type { LeaderboardItem } from '../lib/types'
 
 export const LeaderboardRoute = (): JSX.Element => {
   const { state: auth } = useAuth()
-  const [entries, setEntries] = createSignal<readonly LeaderboardEntry[]>([])
+  const [entries, setEntries] = createSignal<readonly LeaderboardItem[]>([])
   const [error, setError] = createSignal<string | null>(null)
 
-  Effect.runPromise(fetchLeaderboard).then(setEntries).catch(flow(String, setError))
+  Effect.runPromise(fetchLeaderboard()).then(setEntries).catch(flow(String, setError))
 
-  const rowClass = (entry: LeaderboardEntry): string => {
+  const rowClass = (entry: LeaderboardItem): string => {
     const rankClass = entry.rank === 1 ? 'top1' : entry.rank === 2 ? 'top2' : entry.rank === 3 ? 'top3' : ''
     const meClass = auth.user !== null && auth.user.username === entry.username ? 'me' : ''
     return ['row', rankClass, meClass].filter((s) => s !== '').join(' ')

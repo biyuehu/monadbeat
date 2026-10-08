@@ -5,6 +5,7 @@ import { Headbar } from './components/Headbar'
 import { AuthProvider } from './context/auth'
 import { FilterProvider } from './context/filter'
 import { AccountRoute } from './routes/AccountRoute'
+import { AuthCallbackRoute } from './routes/AuthCallbackRoute'
 import { LeaderboardRoute } from './routes/LeaderboardRoute'
 import { ProblemsRoute } from './routes/ProblemsRoute'
 import { ProfileRoute } from './routes/ProfileRoute'
@@ -22,6 +23,7 @@ export const App = (): JSX.Element => (
     <Route path="/" component={ProblemsRoute} />
     <Route path="/quiz/:id" component={QuizRoute} />
     <Route path="/account" component={AccountRoute} />
+    <Route path="/auth/callback" component={AuthCallbackRoute} />
     <Route path="/leaderboard" component={LeaderboardRoute} />
     <Route path="/profile" component={ProfileRoute} />
   </Router>
