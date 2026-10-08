@@ -2,26 +2,39 @@
 
 ## Backend
 
-<!-- - `satisfy_law` judge not implemented: `_to_display` raises `NotImplementedError`, `judge()` raises `NotImplementedError`. Either implement or remove `SatisfyLawConfig`. -->
-<!-- - `fix_laziness` has no `JudgeConfig` variant at all — add `FixLazinessConfig` + dispatcher branch, or drop the type. -->
-- `POST /submissions` stores the row but does not touch any per-problem progress — progress is derived from `Submission` rows, which is fine, but there is no `GET` endpoint exposing per-user progress; the frontend reads a static `progress.json`.
-- `/submissions` list uses `offset`/`limit`; deep pagination will degrade linearly. Switch to cursor pagination on `submitted_at`.
-- `leaderboard` endpoint aggregates in Python. Push aggregation into SQL (`GROUP BY user_id` + `SUM`/`COUNT`) once submission volume passes ~10k correct rows.
-- CORS middleware is not configured. Frontend on a different origin will be blocked.
-- `decode_access_token` in `app/auth/jwt.py` raises `ValueError`/`KeyError` on a malformed `sub` claim instead of returning `None` (would surface as 500).
-- GitHub OAuth flow lacks a `state` parameter (CSRF protection).
-- `limiter` keys on `get_remote_address`; behind a reverse proxy all clients share one bucket. Read `X-Forwarded-For`.
-- `ghc_runner` returns raw stderr to the client, leaking temp directory paths.
+- [x] `leaderboard` aggregated in Python; rewrite as SQL `GROUP BY`.
+- [x] `SubmitRequest` / `Submission*` use `problem_slug` instead of `problem_id`, aligned with `/problems/{slug}`.
+- [x] `SubmitRequest.user_answer` has no length cap; add `max_length`.
+- [x] `ghc_runner` has no memory ceiling; add `+RTS -M{ghc_memory_mb}m` and config knob.
+- [x] `POST /submissions` decorator `@limiter.limit("10/minute")` missing `request: Request` param (would 500).
+- [x] `httpx` errors from GitHub OAuth not caught (would 500 instead of 502).
+- [x] `jwt_secret` had an insecure default; now refuses to start unless overridden.
+- [x] `get_problem` / `submit` do not check `Problem.is_published`.
+- [x] `db.py` engine missing `pool_pre_ping`.
+- [x] `LeaderboardCache` in-process singleton is inconsistent across workers; replaced with stateless `compute_leaderboard`.
+- [x] `Problem` table has no `CheckConstraint` and no `problem_type` / `judge_config` consistency check.
+- [ ] `/submissions` list uses `offset`/`limit`; deep pagination degrades linearly. Switch to cursor pagination on `submitted_at`.
+- [ ] CORS middleware is not configured. Frontend on a different origin will be blocked.
+- [ ] `decode_access_token` in `app/auth/jwt.py` raises `ValueError`/`KeyError` on a malformed `sub` claim instead of returning `None` (would surface as 500).
+- [ ] GitHub OAuth flow lacks a `state` parameter (CSRF protection).
+- [ ] `limiter` keys on `get_remote_address`; behind a reverse proxy all clients share one bucket. Read `X-Forwarded-For`.
+- [ ] `ghc_runner` returns raw stderr to the client, leaking temp directory paths.
+- [ ] `site_url` (backend) and frontend dev origin disagree; the OAuth callback redirects to `http://localhost:8000/auth/callback?token=...` which is the backend, not the frontend, and 404s. Need a separate `frontend_url` setting.
+- [ ] No seed mechanism; a fresh DB has an empty `problem` table and `/problems/` returns an empty list.
 
 ## Frontend
 
-- `QuizRoute` does not call `POST /submissions`; `infer_type` / `find_function` show "Grading not wired to backend yet", `predict_behavior` grades locally.
-- `AccountRoute` login reads plaintext passwords from static `users.json`; signup only checks for duplicates locally. Both should go through backend / GitHub OAuth.
-- No `/auth/callback` route to receive the token after GitHub OAuth redirect.
-- All data in `src/lib/api.ts` is read from `public/datas/*.json`; nothing hits the backend API yet.
-- `ProfileRoute` reads static `progress.json` instead of a backend endpoint.
-- `Submissions` page does not exist (but `submissions.json` and `fetchSubmissions` do).
+- [x] `QuizRoute` does not call `POST /submissions`; wire it through the backend.
+- [x] `AccountRoute` login reads plaintext passwords from static `users.json`; replaced by GitHub OAuth.
+- [x] No `/auth/callback` route to receive the token after GitHub OAuth redirect.
+- [x] All data in `src/lib/api.ts` read from `public/datas/*.json`; all endpoints now go through `${API_BASE}`.
+- [x] `ProfileRoute` reads static `progress.json`; now derives solved set from `/submissions`.
+- [x] `src/lib/schema.ts` hand-written Effect schemas replaced by `openapi-typescript` output (`api-types.ts` + `types.ts`).
+- [ ] `Submissions` page does not exist; `fetchSubmissions` is defined but only used by `ProfileRoute`.
+- [ ] `public/datas/*.json` are no longer read by the frontend; decide whether to delete them or keep them as offline samples.
+- [ ] `ProfileRoute` derives solved set by fetching all submissions; this won't scale past the default page size. A `GET /me/progress` endpoint (or `?all=true`) is needed.
 
 ## Meta
 
-- `README.md` references `web/` as "legacy demo"; the directory no longer exists in the repo.
+- [x] `README.md` references `web/` as "legacy demo"; the directory no longer exists.
+- [ ] `openapi.json` and `src/lib/api-types.ts` are generated by `just gen-types` and git-ignored; `bun run dev` / `bun run build` regenerate them. Document this in `README.md`.

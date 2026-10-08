@@ -12,3 +12,7 @@ check:
 
 build-db:
   uv run python -c "from app.db import init_db; init_db()"
+
+gen-types:
+  uv run python -m scripts.export_openapi
+  bunx openapi-typescript openapi.json -o src/lib/api-types.ts
