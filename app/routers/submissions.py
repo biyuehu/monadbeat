@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.auth.dependencies import get_current_user, require_not_banned
 from app.config import settings
 from app.db import get_session
 from app.dtos.submission import (
+  ProgressItem,
+  ProgressResponse,
   SubmissionListItem,
   SubmissionListResponse,
   SubmissionResponse,
@@ -31,6 +33,7 @@ def list_submissions(
     select(Submission, Problem.title, Problem.slug)
     .join(Problem)
     .where(Submission.user_id == user.id)
+    .order_by(col(Submission.submitted_at).desc())
   )
   if problem_slug is not None:
     base_query = base_query.where(Problem.slug == problem_slug)
@@ -56,6 +59,30 @@ def list_submissions(
 
   return SubmissionListResponse(
     items=items, total=total, page=page, page_size=page_size
+  )
+
+
+@router.get("/progress")
+def list_progress(
+  user: User = Depends(get_current_user),
+  session: Session = Depends(get_session),
+) -> ProgressResponse:
+  rows = session.exec(
+    select(Problem.slug, func.count(), func.bool_or(Submission.is_correct))
+    .select_from(Submission)
+    .join(Problem, Submission.problem_id == Problem.id)
+    .where(Submission.user_id == user.id)
+    .group_by(Problem.slug)
+  ).all()
+  return ProgressResponse(
+    items=[
+      ProgressItem(
+        problem_slug=slug,
+        status="correct" if solved else "wrong",
+        attempts=count,
+      )
+      for slug, count, solved in rows
+    ]
   )
 
 

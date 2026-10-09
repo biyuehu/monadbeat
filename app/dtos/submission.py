@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -30,3 +31,12 @@ class SubmissionListItem(BaseModel):
 
 
 SubmissionListResponse = PaginatedResponse[SubmissionListItem]
+
+class ProgressItem(BaseModel):
+  problem_slug: str
+  status: Literal["correct", "wrong"]
+  attempts: int
+
+
+class ProgressResponse(BaseModel):
+  items: list[ProgressItem]
