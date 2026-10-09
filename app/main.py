@@ -30,7 +30,9 @@ app.add_middleware(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, cast(ExceptionHandler, _rate_limit_exceeded_handler))
+app.add_exception_handler(
+  RateLimitExceeded, cast(ExceptionHandler, _rate_limit_exceeded_handler)
+)
 
 app.include_router(auth.router)
 app.include_router(user.router)

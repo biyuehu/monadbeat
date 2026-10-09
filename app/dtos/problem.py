@@ -40,4 +40,5 @@ class ProblemListItem(BaseModel):
   problem_type: str
   category: list[str]
 
+
 ProblemListResponse = PaginatedResponse[ProblemListItem]

@@ -35,8 +35,7 @@ async def github_callback(
 
   github_id = str(gh_user["id"])
   is_super = (
-    settings.superadmin_github_id != ""
-    and github_id == settings.superadmin_github_id
+    settings.superadmin_github_id != "" and github_id == settings.superadmin_github_id
   )
   user = session.exec(select(User).where(User.github_id == github_id)).first()
 
