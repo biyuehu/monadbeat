@@ -21,22 +21,25 @@ class Settings(BaseSettings):
   jwt_expire_minutes: int = 60 * 24 * 7
 
   site_url: str = "http://localhost:8000"
+  frontend_url: str = "http://localhost:5173"
   github_client_id: str = ""
   github_client_secret: str = ""
+
+  superadmin_github_id: str = ""
 
   @property
   def github_redirect_uri(self) -> str:
     return f"{self.site_url}/auth/github/callback"
 
   @property
-  def frontend_url(self) -> str:
-    return self.site_url
+  def cors_origins(self) -> list[str]:
+    return [o.strip() for o in self.frontend_url.split(",") if o.strip()]
 
   @model_validator(mode="after")
   def _reject_default_jwt_secret(self) -> "Settings":
     if self.jwt_secret == _DEFAULT_JWT_SECRET:
       raise ValueError(
-        "JWT_SECRET is not set. Copy .env.example to .env and set a random secret, e.g. `python -c \"import secrets; print(secrets.token_hex(32))\"`."
+        'JWT_SECRET is not set. Copy .env.example to .env and set a random secret, e.g. `python -c "import secrets; print(secrets.token_hex(32))"`.'
       )
     return self
 

@@ -34,6 +34,10 @@ async def github_callback(
     raise HTTPException(status_code=502, detail=f"github oauth failed: {exc}") from exc
 
   github_id = str(gh_user["id"])
+  is_super = (
+    settings.superadmin_github_id != ""
+    and github_id == settings.superadmin_github_id
+  )
   user = session.exec(select(User).where(User.github_id == github_id)).first()
 
   if user is None:
@@ -41,7 +45,13 @@ async def github_callback(
       github_id=github_id,
       username=gh_user["login"],
       avatar_url=gh_user.get("avatar_url"),
+      is_admin=is_super,
     )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+  elif is_super and not user.is_admin:
+    user.is_admin = True
     session.add(user)
     session.commit()
     session.refresh(user)

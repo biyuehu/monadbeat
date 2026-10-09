@@ -8,6 +8,8 @@ class MeResponse(BaseModel):
   avatar_url: str | None
   created_at: datetime
   is_admin: bool
+  is_superadmin: bool
+  is_banned: bool
 
 
 class PublicUserResponse(BaseModel):

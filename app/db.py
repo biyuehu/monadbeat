@@ -2,6 +2,10 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app.config import settings
 
+# Importing the models registers them with SQLModel.metadata.
+# Without this, `SQLModel.metadata.create_all` sees an empty schema.
+from app.models import ban, problem, submission, user  # noqa: F401
+
 engine = create_engine(
   settings.database_url,
   echo=False,

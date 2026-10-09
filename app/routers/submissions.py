@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, func, select
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_not_banned
 from app.config import settings
 from app.db import get_session
 from app.dtos.submission import (
@@ -64,7 +64,7 @@ def list_submissions(
 def submit(
   request: Request,
   body: SubmitRequest,
-  user: User = Depends(get_current_user),
+  user: User = Depends(require_not_banned),
   session: Session = Depends(get_session),
 ) -> SubmissionResponse:
   problem = session.exec(

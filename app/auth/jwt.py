@@ -18,6 +18,9 @@ def decode_access_token(token: str) -> int | None:
     payload = jwt.decode(
       token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
     )
-    return int(payload["sub"])
-  except jwt.PyJWTError:
+    sub = payload.get("sub")
+    if sub is None:
+      return None
+    return int(sub)
+  except (jwt.PyJWTError, ValueError, TypeError):
     return None
