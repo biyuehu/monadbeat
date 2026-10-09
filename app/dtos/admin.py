@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.dtos.user import Role
 from app.models.problem import JudgeConfig
 
 
@@ -54,8 +55,7 @@ class ProblemAdminDetail(BaseModel):
 class UserAdminItem(BaseModel):
   username: str
   avatar_url: str | None
-  is_admin: bool
-  is_superadmin: bool
+  role: Role
   created_at: datetime
 
 

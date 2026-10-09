@@ -70,7 +70,7 @@ def list_progress(
   rows = session.exec(
     select(Problem.slug, func.count(), func.bool_or(Submission.is_correct))
     .select_from(Submission)
-    .join(Problem, Submission.problem_id == Problem.id)
+    .join(Problem)
     .where(Submission.user_id == user.id)
     .group_by(Problem.slug)
   ).all()
@@ -95,7 +95,9 @@ def submit(
   session: Session = Depends(get_session),
 ) -> SubmissionResponse:
   problem = session.exec(
-    select(Problem).where(Problem.slug == body.problem_slug, Problem.is_published == True)
+    select(Problem).where(
+      Problem.slug == body.problem_slug, Problem.is_published == True
+    )
   ).first()
   if problem is None or problem.id is None:
     raise HTTPException(status_code=404, detail="Problem not found")

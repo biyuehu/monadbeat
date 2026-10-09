@@ -5,6 +5,7 @@ from sqlmodel import Session
 from app.auth.jwt import decode_access_token
 from app.config import settings
 from app.db import get_session
+from app.dtos.user import Role
 from app.models.user import User
 from app.services.ban import active_ban
 
@@ -49,10 +50,17 @@ def get_current_user_optional(
 
 def is_superadmin(user: User) -> bool:
   return (
-    user.is_admin
-    and settings.superadmin_github_id != ""
+    settings.superadmin_github_id != ""
     and user.github_id == settings.superadmin_github_id
   )
+
+
+def role_of(user: User) -> Role:
+  if is_superadmin(user):
+    return "superadmin"
+  if user.is_admin:
+    return "admin"
+  return "user"
 
 
 def require_admin(user: User = Depends(get_current_user)) -> User:

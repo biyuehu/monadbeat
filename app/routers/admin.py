@@ -3,7 +3,12 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, func, select
 
-from app.auth.dependencies import is_superadmin, require_admin, require_superadmin
+from app.auth.dependencies import (
+  is_superadmin,
+  require_admin,
+  require_superadmin,
+  role_of,
+)
 from app.config import settings
 from app.db import get_session
 from app.dtos.admin import (
@@ -29,8 +34,7 @@ def _user_item(user: User) -> UserAdminItem:
   return UserAdminItem(
     username=user.username,
     avatar_url=user.avatar_url,
-    is_admin=user.is_admin,
-    is_superadmin=is_superadmin(user),
+    role=role_of(user),
     created_at=user.created_at,
   )
 

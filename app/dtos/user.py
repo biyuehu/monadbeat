@@ -1,14 +1,16 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
+
+Role = Literal["user", "admin", "superadmin"]
 
 
 class MeResponse(BaseModel):
   username: str
   avatar_url: str | None
   created_at: datetime
-  is_admin: bool
-  is_superadmin: bool
+  role: Role
   is_banned: bool
 
 
