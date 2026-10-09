@@ -2,126 +2,199 @@ import { useNavigate } from '@solidjs/router'
 import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { FilterPanel } from '../components/FilterPanel'
-import { RouteTitle } from '../components/RouteTitle'
+import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
-import { fetchProblems } from '../lib/api'
-import { isProblemType, type ProblemListItem, ProblemTypeLabel, ProblemTypeOrder } from '../lib/types'
+import { fetchProblems, fetchProgress } from '../lib/api'
+import {
+  isProblemType,
+  type ProblemListItem,
+  ProblemTypeLabel,
+  ProblemTypeOrder,
+  type ProgressItem
+} from '../lib/types'
 
-const stars = (difficulty: number): string => Array.from({ length: 3 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
+const stars = (difficulty: number): string => Array.from({ length: 5 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
+
+type Status = 'todo' | 'correct' | 'wrong'
+
+const statusStyle: Record<Status, { icon: string; icon2: string; iconCls: string; chipCls: string }> = {
+  todo: { icon: '🔘', icon2: '-', iconCls: 'text-faint', chipCls: 'border-chip-line text-dim bg-row' },
+  correct: { icon: '🟢', icon2: '√', iconCls: 'text-ok', chipCls: 'border-ok text-ok bg-ok-bg' },
+  wrong: { icon: '🔴', icon2: '×', iconCls: 'text-err', chipCls: 'border-err text-err bg-err-bg' }
+}
+
+const statusLabel = (status: Status, attempts: number): string => `${statusStyle[status].icon2} ${attempts}`
+
+const statusTitle = (status: Status, attempts: number): string =>
+  `${status === 'todo' ? 'Not attempted' : status === 'correct' ? 'Solved' : 'Not solved yet'} · ${attempts} attempt${attempts === 1 ? '' : 's'}`
 
 export const ProblemsRoute = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
   const { state: filter, isFiltering } = useFilter()
   const [problems, setProblems] = createSignal<readonly ProblemListItem[]>([])
+  const [progress, setProgress] = createSignal<ReadonlyMap<string, ProgressItem>>(new Map())
+  const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [filterOpen, setFilterOpen] = createSignal(false)
   const [search, setSearch] = createSignal('')
 
-  Effect.runPromise(fetchProblems()).then(setProblems).catch(flow(String, setError))
+  Effect.runPromise(fetchProblems())
+    .then(setProblems)
+    .catch(flow(String, setError))
+    .finally(() => setLoading(false))
+
+  const token = auth.token
+  if (token !== null) {
+    Effect.runPromise(fetchProgress(token))
+      .then((items) => setProgress(new Map(items.map((i) => [i.problem_slug, i]))))
+      .catch(() => setProgress(new Map()))
+  }
+
+  const statusOf = (slug: string): { status: Status; attempts: number } => {
+    const item = progress().get(slug)
+    if (item === undefined) return { status: 'todo', attempts: 0 }
+    return { status: item.status, attempts: item.attempts }
+  }
 
   const visible = (): ProblemListItem[] =>
     problems()
       .filter((p) => isProblemType(p.problem_type) && filter[p.problem_type])
       .filter((p) => p.title.toLowerCase().includes(search().toLowerCase()))
 
+  const countText = (): string => {
+    if (loading()) return 'Loading...'
+    if (problems().length === 0) return '0 problems'
+    return visible().length === problems().length
+      ? `${problems().length} problems`
+      : `${visible().length} / ${problems().length} problems`
+  }
+
   return (
-    <Show
-      when={auth.user !== null}
-      fallback={
-        <div class="mainFrame">
-          <RouteTitle>Monad Beat</RouteTitle>
-          <div class="terminal">
-            <div class="emptyNotice">
-              <div class="emptyTitle">Sign in required</div>
-              <div class="emptyText">Please sign in to browse the question list.</div>
-              <a class="emptyBtn" href="/account">
-                Sign in
-              </a>
-            </div>
+    <Frame title="Monad Beat">
+      <div class="page-header items-center">
+        <span class="page-title text-2xl md:text-3xl">Problem List</span>
+        <div class="flex items-center gap-2 flex-1 min-w-50 max-w-105 max-md:basis-full max-md:max-w-none">
+          <button
+            type="button"
+            class={`inline-flex size-8 shrink-0 items-center justify-center p-0 cursor-pointer border transition-colors hover:bg-brand hover:text-white active:scale-97 ${
+              isFiltering() ? 'bg-brand text-white border-accent' : 'bg-transparent text-soft border-brand'
+            }`}
+            aria-label="Filter problems"
+            onClick={() => setFilterOpen(true)}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" class="block fill-current">
+              <path d="M3 4h18l-7 8.5V19l-4 2v-8.5L3 4z" />
+            </svg>
+          </button>
+          <div class="flex flex-1 min-w-0 h-8 items-center gap-1.5 pl-3 pr-1 bg-field border border-field-line transition-colors focus-within:border-brand">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              role="img"
+              aria-label="Search"
+              class="shrink-0 fill-current text-muted"
+            >
+              <title>Search</title>
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+            </svg>
+            <input
+              type="text"
+              class="flex-1 min-w-0 px-1 text-[0.85rem] bg-transparent border-0 outline-none text-fg placeholder:text-dim"
+              placeholder="FINDING WHAT"
+              value={search()}
+              onInput={(e) => setSearch(e.currentTarget.value)}
+            />
+            <button type="button" class="btn h-6 shrink-0 px-3.5 text-[0.62rem] whitespace-nowrap">
+              Search
+            </button>
           </div>
-        </div>
-      }
-    >
-      <div class="mainFrame">
-        <RouteTitle>Monad Beat</RouteTitle>
-        <div class="terminal">
-          <div class="header">
-            <span class="title">Question List</span>
-            <div class="searchFrame">
-              <button
-                type="button"
-                class="filter-btn"
-                classList={{ active: isFiltering() }}
-                aria-label="Filter questions"
-                onClick={() => setFilterOpen(true)}
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                  <path d="M3 4h18l-7 8.5V19l-4 2v-8.5L3 4z" />
-                </svg>
-              </button>
-              <div class="search-box">
-                <span class="search-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-label="Search">
-                    <title>Search</title>
-                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-                  </svg>
-                </span>
-                <input
-                  type="text"
-                  class="search-input"
-                  placeholder="FINDING WHAT"
-                  value={search()}
-                  onInput={(e) => setSearch(e.currentTarget.value)}
-                />
-                <button type="button" class="search-btn">
-                  Search
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="listHeader">
-            <span class="listLabel">📋 All Questions</span>
-            <span class="listCount">
-              {visible().length === problems().length
-                ? `${problems().length} questions`
-                : `${visible().length} / ${problems().length} questions`}
-            </span>
-          </div>
-
-          <Show when={error() !== null} fallback={null}>
-            <div class="error-text">⚠️ {error()}</div>
-          </Show>
-
-          <div class="problem-grid">
-            <For each={visible()}>
-              {(problem) => (
-                <button type="button" class="problemItem" onClick={() => navigate(`/quiz/${problem.slug}`)}>
-                  <span class="p-status">○</span>
-                  <span class="p-id">{problem.slug}</span>
-                  <span class="p-title">{problem.title}</span>
-                  <div class="p-tags">
-                    <span class="p-tag">
-                      {isProblemType(problem.problem_type) ? ProblemTypeLabel[problem.problem_type] : problem.problem_type}
-                    </span>
-                  </div>
-                  <span class="p-diff">Difficulty: {stars(problem.difficulty)}</span>
-                  <span class="p-state undo">Todo</span>
-                </button>
-              )}
-            </For>
-          </div>
-
-          <div class="footerLine">
-            <span>λ Monad Beat</span>
-            <span>{ProblemTypeOrder.length} types · Haskell Practice</span>
-          </div>
-
-          <FilterPanel open={filterOpen()} onClose={() => setFilterOpen(false)} />
         </div>
       </div>
-    </Show>
+
+      <div class="flex items-center justify-between mb-3 px-1 shrink-0">
+        <span class="text-xs font-medium uppercase tracking-wider text-strong">📋 All Problems</span>
+        <span class="px-3 py-0.5 text-xs text-accent bg-panel border border-countline">{countText()}</span>
+      </div>
+
+      <Show when={error() !== null}>
+        <div class="status-text text-err">⚠️ {error()}</div>
+      </Show>
+
+      <div class="flex items-center gap-2 md:gap-3 w-full max-w-200 mx-auto pb-2 pl-[18px] pr-[15px] md:pl-[22px] md:pr-[19px] text-[0.65rem] uppercase tracking-widest text-muted shrink-0">
+        <span class="w-6 shrink-0" />
+        <span class="flex-1 min-w-0">Title</span>
+        <span class="w-32 max-md:w-24 shrink-0 text-right">Type</span>
+        <span class="w-16 shrink-0 text-right max-[560px]:hidden">Diff</span>
+        <span class="w-[4.2rem] max-md:w-14 shrink-0 text-center">Tries</span>
+      </div>
+
+      <div class="list-box flex-1 min-h-25 overflow-y-auto w-full max-w-200 mx-auto">
+        <Show when={!loading()} fallback={<div class="status-text text-dim">⏳ Loading problems...</div>}>
+          <Show
+            when={problems().length > 0}
+            fallback={
+              <div class="empty-box flex-1">
+                <div class="empty-title">No problems yet</div>
+                <div class="empty-text">The problem bank is empty. Check back later.</div>
+              </div>
+            }
+          >
+            <Show
+              when={visible().length > 0}
+              fallback={
+                <div class="empty-box flex-1">
+                  <div class="empty-title">No matches</div>
+                  <div class="empty-text">No problems match your filter or search.</div>
+                </div>
+              }
+            >
+              <For each={visible()}>
+                {(problem) => {
+                  const st = (): { status: Status; attempts: number } => statusOf(problem.slug)
+                  return (
+                    <button
+                      type="button"
+                      class="group list-row min-w-0 shrink-0 gap-2 md:gap-3 px-2.5 py-2 md:px-3.5 md:py-2.5 bg-row text-left font-[inherit] cursor-pointer border-y-0 border-r-0 hover:bg-hl hover:border-l-hl-line"
+                      onClick={() => navigate(`/quiz/${problem.slug}`)}
+                    >
+                      <span class="w-6 shrink-0 text-center text-base">{statusStyle[st().status].icon}</span>
+                      <span
+                        title={problem.title}
+                        class="flex-1 min-w-0 truncate max-[420px]:whitespace-normal text-[0.95rem] max-[420px]:text-[0.85rem] font-medium tracking-tight text-text2 group-hover:text-hl-fg"
+                      >
+                        {problem.title}
+                      </span>
+                      <div class="flex w-32 max-md:w-24 min-w-0 shrink-0 justify-end">
+                        <span class="chip group-hover:text-hl-tag group-hover:border-brand">
+                          {isProblemType(problem.problem_type)
+                            ? ProblemTypeLabel[problem.problem_type]
+                            : problem.problem_type}
+                        </span>
+                      </div>
+                      <span class="w-16 shrink-0 text-right text-[0.65rem] whitespace-nowrap text-dim max-[560px]:hidden group-hover:text-hl-sub">
+                        {stars(problem.difficulty)}
+                      </span>
+                      <span
+                        class={`w-[4.2rem] max-md:w-14 shrink-0 py-0.5 text-center text-[0.65rem] tracking-wide whitespace-nowrap border ${statusStyle[st().status].chipCls}`}
+                        title={statusTitle(st().status, st().attempts)}
+                      >
+                        {statusLabel(st().status, st().attempts)}
+                      </span>
+                    </button>
+                  )
+                }}
+              </For>
+            </Show>
+          </Show>
+        </Show>
+      </div>
+
+      <FooterLine class="!mt-4" right={`${ProblemTypeOrder.length} types · Haskell Practice`} />
+
+      <FilterPanel open={filterOpen()} onClose={() => setFilterOpen(false)} />
+    </Frame>
   )
 }

@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from '@solidjs/router'
 import { Effect } from 'effect'
 import { createEffect, type JSX } from 'solid-js'
-import { RouteTitle } from '../components/RouteTitle'
+import { Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
 import { fetchMe } from '../lib/api'
 
@@ -13,7 +13,7 @@ export const AuthCallbackRoute = (): JSX.Element => {
   createEffect(() => {
     const token = params.token
     if (token === undefined || token === '') {
-      navigate('/account')
+      navigate('/profile')
       return
     }
     Effect.runPromise(fetchMe(token))
@@ -21,15 +21,12 @@ export const AuthCallbackRoute = (): JSX.Element => {
         signIn(user, token)
         navigate('/profile')
       })
-      .catch(() => navigate('/account'))
+      .catch(() => navigate('/profile'))
   })
 
   return (
-    <div class="mainFrame">
-      <RouteTitle>Signing in</RouteTitle>
-      <div class="terminal">
-        <div class="loading-text">Signing in...</div>
-      </div>
-    </div>
+    <Frame title="Signing in">
+      <div class="status-text text-dim">Signing in...</div>
+    </Frame>
   )
 }

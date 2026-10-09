@@ -4,6 +4,7 @@ import type {
   MeResponse,
   ProblemDetail,
   ProblemListItem,
+  ProgressItem,
   SubmissionListItem,
   SubmissionResponse
 } from './types'
@@ -38,14 +39,15 @@ export const fetchLeaderboard = (): Effect.Effect<readonly LeaderboardItem[], Er
 export const fetchMe = (token: string): Effect.Effect<MeResponse, Error> =>
   fetchJson<MeResponse>('/me', authInit(token))
 
-export const fetchSubmissions = (token: string): Effect.Effect<readonly SubmissionListItem[], Error> =>
-  fetchJson<{ items: SubmissionListItem[] }>('/submissions/', authInit(token)).pipe(Effect.map((r) => r.items))
+export const fetchSubmissions = (token: string, pageSize = 100): Effect.Effect<readonly SubmissionListItem[], Error> =>
+  fetchJson<{ items: SubmissionListItem[] }>(`/submissions/?page_size=${pageSize}`, authInit(token)).pipe(
+    Effect.map((r) => r.items)
+  )
 
-export const submitAnswer = (
-  slug: string,
-  answer: string,
-  token: string
-): Effect.Effect<SubmissionResponse, Error> =>
+export const fetchProgress = (token: string): Effect.Effect<readonly ProgressItem[], Error> =>
+  fetchJson<{ items: ProgressItem[] }>('/submissions/progress', authInit(token)).pipe(Effect.map((r) => r.items))
+
+export const submitAnswer = (slug: string, answer: string, token: string): Effect.Effect<SubmissionResponse, Error> =>
   fetchJson<SubmissionResponse>(
     '/submissions/',
     authInit(token, {

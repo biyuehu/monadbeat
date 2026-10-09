@@ -15,14 +15,15 @@ export type LeaderboardResponse = components['schemas']['LeaderboardResponse']
 export type SubmitRequest = components['schemas']['SubmitRequest']
 export type SubmissionResponse = components['schemas']['SubmissionResponse']
 export type SubmissionListItem = components['schemas']['SubmissionListItem']
+export type ProgressItem = components['schemas']['ProgressItem']
 
 export const ProblemTypeOrder = ['infer_type', 'find_function', 'predict_behavior'] as const
 export type ProblemType = (typeof ProblemTypeOrder)[number]
 
 export const ProblemTypeLabel: Record<ProblemType, string> = {
-  infer_type: 'Type Signature',
-  find_function: 'Find Function',
-  predict_behavior: 'Choice'
+  infer_type: 'Infer',
+  find_function: 'Find',
+  predict_behavior: 'Predict'
 }
 
 export const isProblemType = (value: string): value is ProblemType =>

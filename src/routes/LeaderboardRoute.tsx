@@ -1,66 +1,89 @@
 import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
-import { RouteTitle } from '../components/RouteTitle'
+import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
 import { fetchLeaderboard } from '../lib/api'
 import type { LeaderboardItem } from '../lib/types'
+
+const rankColor = (rank: number): string => {
+  if (rank === 1) return 'text-warn'
+  if (rank === 2) return 'text-slate-300'
+  if (rank === 3) return 'text-orange-400'
+  return 'text-dim group-hover:text-hl-fg'
+}
 
 export const LeaderboardRoute = (): JSX.Element => {
   const { state: auth } = useAuth()
   const [entries, setEntries] = createSignal<readonly LeaderboardItem[]>([])
   const [error, setError] = createSignal<string | null>(null)
+  const [loading, setLoading] = createSignal(true)
 
-  Effect.runPromise(fetchLeaderboard()).then(setEntries).catch(flow(String, setError))
+  Effect.runPromise(fetchLeaderboard())
+    .then(setEntries)
+    .catch(flow(String, setError))
+    .finally(() => setLoading(false))
 
-  const rowClass = (entry: LeaderboardItem): string => {
-    const rankClass = entry.rank === 1 ? 'top1' : entry.rank === 2 ? 'top2' : entry.rank === 3 ? 'top3' : ''
-    const meClass = auth.user !== null && auth.user.username === entry.username ? 'me' : ''
-    return ['row', rankClass, meClass].filter((s) => s !== '').join(' ')
-  }
+  const isMe = (entry: LeaderboardItem): boolean => auth.user !== null && auth.user.username === entry.username
 
   return (
-    <div class="mainFrame">
-      <RouteTitle>Leaderboard</RouteTitle>
-      <div class="terminal">
-        <div class="header">
-          <span class="title">Leaderboard</span>
-          <span class="subtitle">Leaderboard</span>
-        </div>
-
-        <div class="boardHead">
-          <span class="col-rank">#</span>
-          <span class="col-user">User</span>
-          <span class="col-solved">Solved</span>
-          <span class="col-score">Score</span>
-        </div>
-
-        <div class="board">
-          <Show when={error() === null} fallback={<div class="error-text">⚠️ {error()}</div>}>
-            <Show when={entries().length > 0} fallback={<div class="loading-text">Loading...</div>}>
-              <For each={entries()}>
-                {(entry) => (
-                  <div class={rowClass(entry)}>
-                    <span class="rank">#{entry.rank}</span>
-                    <span class="user">
-                      {entry.username}
-                      {auth.user !== null && auth.user.username === entry.username ? (
-                        <span class="meTag">me</span>
-                      ) : null}
-                    </span>
-                    <span class="solved">✔ {entry.solved_count}</span>
-                    <span class="score">{entry.score} pt</span>
-                  </div>
-                )}
-              </For>
-            </Show>
-          </Show>
-        </div>
-
-        <div class="footerLine">
-          <span>λ Monad Beat</span>
-          <span>Total {entries().length} players</span>
-        </div>
+    <Frame title="Leaderboard">
+      <div class="page-header items-baseline !mb-5">
+        <span class="page-title text-3xl">Leaderboard</span>
+        <span class="text-[0.65rem] uppercase tracking-wider text-dim">Top players</span>
       </div>
-    </div>
+
+      <div class="flex items-center gap-2 md:gap-3 w-full max-w-200 mx-auto pb-2 pl-5 pr-[17px] md:pl-[22px] md:pr-[19px] text-[0.65rem] uppercase tracking-widest text-muted shrink-0">
+        <span class="w-10 shrink-0">#</span>
+        <span class="flex-1 min-w-0">User</span>
+        <span class="w-16 md:w-22 shrink-0 text-right">Solved</span>
+        <span class="w-20 shrink-0 text-right max-[420px]:hidden">Score</span>
+      </div>
+
+      <div class="list-box flex-1 min-h-25 overflow-y-auto w-full max-w-200 mx-auto">
+        <Show when={error() === null} fallback={<div class="status-text text-err">⚠️ {error()}</div>}>
+          <Show
+            when={entries().length > 0}
+            fallback={
+              <Show when={!loading()} fallback={<div class="status-text text-dim">Loading...</div>}>
+                <div class="empty-box flex-1">
+                  <div class="empty-title">No players yet</div>
+                  <div class="empty-text">Solve a problem to get on the board.</div>
+                </div>
+              </Show>
+            }
+          >
+            <For each={entries()}>
+              {(entry) => (
+                <div
+                  class={`group list-row gap-2 md:gap-3 px-3 py-2.5 md:px-3.5 hover:bg-hl hover:border-l-hl-line ${
+                    isMe(entry) ? 'bg-brand-tint border-l-accent' : 'bg-row'
+                  }`}
+                >
+                  <span class={`w-10 shrink-0 text-[0.8rem] font-bold transition-colors ${rankColor(entry.rank)}`}>
+                    #{entry.rank}
+                  </span>
+                  <span class="flex-1 min-w-0 truncate text-[0.85rem] text-text2 transition-colors group-hover:text-hl-fg">
+                    {entry.username}
+                    <Show when={isMe(entry)}>
+                      <span class="ml-2 px-1.5 py-px text-[0.6rem] tracking-wide text-accent border border-brand">
+                        me
+                      </span>
+                    </Show>
+                  </span>
+                  <span class="w-16 md:w-22 shrink-0 text-right text-[0.72rem] max-[420px]:text-[0.65rem] text-ok">
+                    ✔ {entry.solved_count}
+                  </span>
+                  <span class="w-20 shrink-0 text-right text-[0.72rem] text-soft max-[420px]:hidden group-hover:text-hl-fg">
+                    {entry.score} pt
+                  </span>
+                </div>
+              )}
+            </For>
+          </Show>
+        </Show>
+      </div>
+
+      <FooterLine class="!mt-4" right={`Total ${entries().length} players`} />
+    </Frame>
   )
 }
