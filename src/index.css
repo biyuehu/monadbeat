@@ -1,3 +1,125 @@
+:root {
+  --fg: #d4d4d4;
+  --panel: #0a0a0a;
+  --panel2: #080808;
+  --line: rgb(90, 65, 160);
+  --sep: #1a1a1a;
+  --edge: rgb(143, 78, 139);
+  --accent: #d4a0ff;
+  --soft: #b380e6;
+  --muted: #888;
+  --dim: #555;
+  --faint: #333;
+  --text2: #ccc;
+  --strong: #fff;
+  --head: rgb(69, 58, 98);
+  --sel: rgb(143, 78, 139);
+  --row: rgba(255, 255, 255, 0.02);
+  --hov: #3a2d55;
+  --count-line: purple;
+  --nav: #999;
+  --nav-hover: #e0e0e0;
+  --brand-tint: rgba(124, 92, 191, 0.14);
+  --brand-bg: rgba(124, 92, 191, 0.08);
+  --hl-bg: rgb(143, 78, 139);
+  --hl-line: #444;
+  --hl-fg: #fff;
+  --hl-sub: #bbb;
+  --hl-tag: #ddd;
+  --ok: #4ade80;
+  --ok-bg: rgba(74, 222, 128, 0.1);
+  --err: #f87171;
+  --err-bg: rgba(248, 113, 113, 0.1);
+  --err-line: #3a1f1f;
+  --warn: #fbbf24;
+  --warn-bg: rgba(251, 191, 36, 0.1);
+  --input: #050505;
+  --input-line: #262626;
+  --tag-line: #5e4460;
+  --tag-fg: #666;
+  --ghost-line: #333;
+  --ghost-fg: #999;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --shadow-soft: transparent;
+  --glow: rgba(124, 92, 191, 0.35);
+  --glow-soft: rgba(124, 92, 191, 0.18);
+  --av1: #241a38;
+  --av2: #0a0a0a;
+  --thumb: rgb(143, 78, 139);
+}
+
+body.theme-light {
+  --fg: #2c2c34;
+  --panel: #fff;
+  --panel2: #faf9fd;
+  --line: #d8d0e8;
+  --sep: #e6e1f0;
+  --edge: #d8d0e8;
+  --accent: #6b4fa0;
+  --soft: #7c5cbf;
+  --muted: #8a8299;
+  --dim: #9a92a8;
+  --faint: #c4bfd0;
+  --text2: #4b4a55;
+  --strong: #3b2f52;
+  --head: rgb(228, 222, 240);
+  --sel: #7c5cbf;
+  --row: #faf9fd;
+  --hov: #c9bce6;
+  --count-line: #b9a6dd;
+  --nav: #6d6a78;
+  --nav-hover: #3b2f52;
+  --brand-tint: rgba(124, 92, 191, 0.12);
+  --hl-bg: #e9e2f7;
+  --hl-line: #b9a6dd;
+  --hl-fg: #2c2c34;
+  --hl-sub: #6d6a78;
+  --hl-tag: #6b4fa0;
+  --ok: #2e8b57;
+  --err: #d64545;
+  --err-line: #f0c8c8;
+  --warn: #b7791f;
+  --input: #fff;
+  --input-line: #e0daec;
+  --tag-line: #ddd6ea;
+  --tag-fg: #8a8299;
+  --ghost-line: #d8d0e8;
+  --ghost-fg: #6d6a78;
+  --shadow: rgba(90, 70, 140, 0.1);
+  --shadow-soft: rgba(90, 70, 140, 0.1);
+  --glow: rgba(124, 92, 191, 0.18);
+  --glow-soft: rgba(90, 70, 140, 0.08);
+  --av1: #ede7f8;
+  --av2: #fff;
+  --thumb: #b9a6dd;
+}
+
 #root {
   display: contents;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: #000;
+  color: var(--fg);
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+
+body.theme-light {
+  background: #f2f0f7;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--thumb) transparent;
 }

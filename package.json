@@ -20,6 +20,7 @@
     "@types/node": "^24.13.3",
     "openapi-typescript": "^7.13.0",
     "typescript": "~6.0.2",
+    "unocss": "^66.10.5",
     "vite": "^8.3.0",
     "vite-plugin-solid": "^2.11.14"
   }
