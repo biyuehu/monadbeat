@@ -19,6 +19,12 @@ const navItems: { key: View; icon: string; label: string; needAuth: boolean }[] 
 
 const stars = (difficulty: number): string => Array.from({ length: 5 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
 
+const roleColor = (role: string | undefined): string => {
+  if (role === 'superadmin') return 'var(--role-super)'
+  if (role === 'admin') return 'var(--role-admin)'
+  return 'var(--accent)'
+}
+
 const goLogin = (): void => {
   window.location.href = `${API_BASE}/auth/github/login`
 }
@@ -62,12 +68,12 @@ export const ProfileRoute = (): JSX.Element => {
   const loadSolved = (): void => {
     const token = auth.token
     if (token === null) {
-      setSolved(new Set())
+      setSolved(new Set<string>())
       return
     }
     Effect.runPromise(fetchProgress(token))
       .then((items) => setSolved(new Set(items.filter((i) => i.status === 'correct').map((i) => i.problem_slug))))
-      .catch(() => setSolved(new Set()))
+      .catch(() => setSolved(new Set<string>()))
   }
 
   loadSolved()
@@ -90,7 +96,10 @@ export const ProfileRoute = (): JSX.Element => {
               <img class="size-full object-cover block" src={auth.user?.avatar_url ?? ''} alt="avatar" />
             </Show>
           </div>
-          <div class="min-w-0 max-w-full truncate text-[0.85rem] font-semibold tracking-wide text-accent md:mt-1">
+          <div
+            class="min-w-0 max-w-full truncate text-[0.85rem] font-semibold tracking-wide md:mt-1"
+            style={{ color: roleColor(auth.user?.role) }}
+          >
             {auth.user?.username ?? 'Guest'}
           </div>
         </div>
@@ -144,8 +153,14 @@ export const ProfileRoute = (): JSX.Element => {
                 <div class="px-3 py-2.5 bg-row text-soft break-all">{auth.user?.username}</div>
                 <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Joined</div>
                 <div class="px-3 py-2.5 bg-row text-fg break-all">{auth.user?.created_at}</div>
-                <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Admin</div>
-                <div class="px-3 py-2.5 bg-row text-fg">{auth.user?.is_admin === true ? 'yes' : 'no'}</div>
+                <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Role</div>
+                <div class="px-3 py-2.5 bg-row font-semibold" style={{ color: roleColor(auth.user?.role) }}>
+                  {auth.user?.role ?? 'user'}
+                </div>
+                <Show when={auth.user?.is_banned === true}>
+                  <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Status</div>
+                  <div class="px-3 py-2.5 bg-row text-err">Banned</div>
+                </Show>
                 <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Solved</div>
                 <div class="px-3 py-2.5 bg-row text-fg">
                   {solvedCount()} / {problems().length}

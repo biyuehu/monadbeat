@@ -1,5 +1,7 @@
-import { createContext, type JSX, useContext } from 'solid-js'
+import { Effect } from 'effect'
+import { createContext, type JSX, onMount, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
+import { fetchMe } from '../lib/api'
 import { clearCurrentUser, clearToken, readCurrentUser, readToken, writeCurrentUser, writeToken } from '../lib/storage'
 import type { MeResponse } from '../lib/types'
 
@@ -16,7 +18,11 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue>()
 
-const readStoredUser = (): MeResponse | null => readCurrentUser().pipe((o) => (o._tag === 'Some' ? o.value : null))
+const readStoredUser = (): MeResponse | null => {
+  const stored = readCurrentUser().pipe((o) => (o._tag === 'Some' ? o.value : null))
+  if (stored === null) return null
+  return typeof stored.role === 'string' ? stored : null
+}
 
 const readStoredToken = (): string | null => readToken().pipe((o) => (o._tag === 'Some' ? o.value : null))
 
@@ -39,6 +45,21 @@ export const AuthProvider = (props: { children: JSX.Element }): JSX.Element => {
       setState({ user: null, token: null })
     }
   }
+
+  onMount(() => {
+    const token = state.token
+    if (token === null) return
+    Effect.runPromise(fetchMe(token))
+      .then((user) => {
+        writeCurrentUser(user)
+        setState({ user })
+      })
+      .catch(() => {
+        clearCurrentUser()
+        clearToken()
+        setState({ user: null, token: null })
+      })
+  })
 
   return <AuthContext.Provider value={value}>{props.children}</AuthContext.Provider>
 }

@@ -46,6 +46,8 @@
   --av1: #241a38;
   --av2: #0a0a0a;
   --thumb: rgb(143, 78, 139);
+  --role-super: #fbbf24;
+  --role-admin: #7dd3fc;
 }
 
 body.theme-light {
@@ -92,6 +94,8 @@ body.theme-light {
   --av1: #ede7f8;
   --av2: #fff;
   --thumb: #b9a6dd;
+  --role-super: #b7791f;
+  --role-admin: #0369a1;
 }
 
 #root {
