@@ -1,0 +1,67 @@
+@base = http://localhost:8000
+# Fill in a JWT. Generate one for user id 1 with:
+#   uv run python -c "from app.auth.jwt import create_access_token; print(create_access_token(1))"
+# A user row must exist first; either sign in via GitHub OAuth or INSERT a row manually.
+@token =
+
+### root
+GET {{base}}/
+
+### current user
+GET {{base}}/me
+Authorization: Bearer {{token}}
+
+### public user
+GET {{base}}/users/JZWSBDEM
+
+### list problems
+GET {{base}}/problems/
+
+### problem detail - infer_type
+GET {{base}}/problems/map-filterwithkey
+
+### problem detail - find_function
+GET {{base}}/problems/sort-descending
+
+### problem detail - predict_behavior
+GET {{base}}/problems/laziness-take-error
+
+### submit - infer_type
+POST {{base}}/submissions/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "problem_slug": "map-filterwithkey",
+  "user_answer": "f = Map.filterWithKey"
+}
+
+### submit - find_function
+POST {{base}}/submissions/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "problem_slug": "sort-descending",
+  "user_answer": "sortOn negate"
+}
+
+### submit - predict_behavior
+POST {{base}}/submissions/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "problem_slug": "laziness-take-error",
+  "user_answer": "1"
+}
+
+### list my submissions
+GET {{base}}/submissions/
+Authorization: Bearer {{token}}
+
+### leaderboard
+GET {{base}}/leaderboard/
+
+### github oauth login (redirects to GitHub)
+GET {{base}}/auth/github/login
