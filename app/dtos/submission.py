@@ -32,6 +32,7 @@ class SubmissionListItem(BaseModel):
 
 SubmissionListResponse = PaginatedResponse[SubmissionListItem]
 
+
 class ProgressItem(BaseModel):
   problem_slug: str
   status: Literal["correct", "wrong"]
