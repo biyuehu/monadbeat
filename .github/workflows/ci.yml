@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-check:
+    name: Backend Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: uv sync --all-groups
+
+      - name: Ruff check (Lint)
+        run: uv run ruff check .
+
+      - name: Ruff format (Style)
+        run: uv run ruff format --check .
+
+      - name: Pyright (Typecheck)
+        run: uv run pyright
+
+  frontend-check:
+    name: Frontend Lint, Typecheck & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv (for openapi generation)
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: uv sync --all-groups
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Biome check (Lint & Format)
+        run: bun run lint
+
+      - name: Generate OpenAPI & TypeScript types
+        run: |
+          uv run python -m scripts.export_openapi
+          bunx openapi-typescript openapi.json -o src/lib/api-types.ts
+
+      - name: TypeScript typecheck
+        run: bun run typecheck
+
+      - name: Vite build
+        run: bun run build

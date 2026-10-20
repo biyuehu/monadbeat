@@ -1,0 +1,29 @@
+# Lefthook Git hooks
+# Refer for explanation to following link:
+# https://github.com/evilmartians/lefthook/blob/master/docs/configuration.md
+
+pre-commit:
+  parallel: true
+  commands:
+    frontend-lint:
+      glob: "*.{js,ts,jsx,tsx,json,css}"
+      run: bunx biome check --write {staged_files}
+      stage_fixed: true
+    backend-ruff-lint:
+      glob: "*.py"
+      run: uv run ruff check --fix {staged_files}
+      stage_fixed: true
+    backend-ruff-format:
+      glob: "*.py"
+      run: uv run ruff format {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: false
+  commands:
+    frontend-typecheck:
+      run: bun run typecheck
+    backend-typecheck:
+      run: uv run pyright
+    frontend-build:
+      run: bun run build
