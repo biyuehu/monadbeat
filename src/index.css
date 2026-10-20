@@ -127,3 +127,116 @@ body.theme-light {
   scrollbar-width: thin;
   scrollbar-color: var(--thumb) transparent;
 }
+
+/* Admin UI Helpers */
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-xs {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  border-radius: 0.2rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-accent {
+  background: var(--brand-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.btn-accent:hover:not(:disabled) {
+  background: var(--accent);
+  color: #000;
+}
+
+.btn-muted {
+  background: var(--row);
+  color: var(--fg);
+  border: 1px solid var(--sep);
+}
+.btn-muted:hover:not(:disabled) {
+  background: var(--hov);
+  border-color: var(--edge);
+}
+
+.btn-ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border: 1px solid var(--ok);
+}
+
+.btn-danger {
+  background: var(--err-bg);
+  color: var(--err);
+  border: 1px solid var(--err);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--err);
+  color: #fff;
+}
+
+.input-field {
+  background: var(--panel2);
+  border: 1px solid var(--sep);
+  color: var(--fg);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 0.25rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input-field:focus {
+  border-color: var(--accent);
+}
+
+.admin-table {
+  border-collapse: collapse;
+  text-align: left;
+}
+.admin-table th {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--sep);
+  color: var(--dim);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.admin-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--sep);
+}
+.admin-table tr:hover td {
+  background: var(--row);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 0.2rem;
+  text-transform: uppercase;
+}
+.badge-super {
+  background: rgba(183, 121, 31, 0.2);
+  color: var(--role-super);
+  border: 1px solid var(--role-super);
+}
+.badge-admin {
+  background: rgba(3, 105, 161, 0.2);
+  color: var(--role-admin);
+  border: 1px solid var(--role-admin);
+}
+.badge-user {
+  background: var(--row);
+  color: var(--dim);
+  border: 1px solid var(--sep);
+}

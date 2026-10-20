@@ -66,7 +66,6 @@ const fetchJson = <A>(path: string, init?: RequestInit): Effect.Effect<A, ApiErr
     catch: asError
   })
 
-
 const authInit = (token: string, init?: RequestInit): RequestInit => ({
   ...init,
   headers: { ...init?.headers, Authorization: `Bearer ${token}` }

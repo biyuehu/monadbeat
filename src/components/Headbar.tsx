@@ -1,20 +1,24 @@
 import { A, useLocation } from '@solidjs/router'
-import { For, type JSX, Show } from 'solid-js'
+import { type JSX, Show } from 'solid-js'
 import { useAuth } from '../context/auth'
 
-type NavLink = { href: string; label: string; match: (path: string) => boolean }
-
-const links: readonly NavLink[] = [
-  { href: '/', label: 'Problem List', match: (p) => p === '/' || p.startsWith('/quiz') },
-  { href: '/leaderboard', label: 'Leaderboard', match: (p) => p.startsWith('/leaderboard') },
-  { href: '/submissions', label: 'Submissions', match: (p) => p.startsWith('/submissions') }
-]
+const NavLink = (props: { href: string; label: string; active: boolean }): JSX.Element => (
+  <A
+    href={props.href}
+    class={`px-2 md:px-3 py-1 text-[13px] md:text-sm no-underline transition-colors ${
+      props.active ? 'text-soft' : 'text-muted hover:text-hl-sub'
+    }`}
+  >
+    {props.label}
+  </A>
+)
 
 export const Headbar = (): JSX.Element => {
   const { state } = useAuth()
   const location = useLocation()
 
   const profileActive = (): boolean => location.pathname.startsWith('/profile')
+  const isAdmin = (): boolean => state.user?.role === 'admin' || state.user?.role === 'superadmin'
 
   const roleBorder = (): string => {
     const role = state.user?.role
@@ -33,18 +37,16 @@ export const Headbar = (): JSX.Element => {
         <span class="text-[15px] md:text-lg font-semibold tracking-tight text-strong">MONAD BEAT</span>
       </A>
       <nav class="flex shrink-0 flex-wrap items-center justify-center gap-1">
-        <For each={links}>
-          {(link) => (
-            <A
-              href={link.href}
-              class={`px-2 md:px-3 py-1 text-[13px] md:text-sm no-underline transition-colors ${
-                link.match(location.pathname) ? 'text-soft' : 'text-muted hover:text-hl-sub'
-              }`}
-            >
-              {link.label}
-            </A>
-          )}
-        </For>
+        <NavLink
+          href="/"
+          label="Problem List"
+          active={location.pathname === '/' || location.pathname.startsWith('/quiz')}
+        />
+        <NavLink href="/leaderboard" label="Leaderboard" active={location.pathname.startsWith('/leaderboard')} />
+        <NavLink href="/submissions" label="Submissions" active={location.pathname.startsWith('/submissions')} />
+        <Show when={isAdmin()}>
+          <NavLink href="/admin" label="Admin" active={location.pathname.startsWith('/admin')} />
+        </Show>
         <A
           href="/profile"
           aria-label="Profile"
