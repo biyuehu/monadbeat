@@ -22,12 +22,12 @@
 - [x] `Ban` table + `require_not_banned` on write endpoints; `POST /admin/users/{username}/ban` and `PUT /admin/bans/{ban_id}/lift`.
 - [x] `/submissions/progress` — per-user aggregation (`problem_slug`, `status`, `attempts`), used by `ProfileRoute`.
 - [ ] `/submissions` list uses `offset`/`limit`; deep pagination degrades linearly. Switch to cursor pagination on `submitted_at`.
-- [ ] GitHub OAuth flow lacks a `state` parameter (CSRF protection).
+- [x] GitHub OAuth flow lacks a `state` parameter (CSRF protection).
 - [x] `ghc_runner` returned raw stderr to the client, leaking temp directory paths; now scrubs the sandbox path while keeping the concrete GHC error message. Also fixed `The IO action 'main' is not defined in module 'Main'` by compiling with `-c` so no `main` binding is required.
 - [x] No automatic seed mechanism; `scripts/seed.sql` exists but must be run manually. Added `scripts/seed.py` and a `just seed` recipe.
 - [ ] Feature: let users tick a box on a submission to import that problem into the bank (import flow / review policy TBD).
 - [ ] Hard ban (reject login) is not implemented; current bans only block `POST /submissions`.
-- [ ] Error responses are bare `HTTPException(detail: str)` with no machine-readable code; the ban reason is embedded in the message string. Define a structured error DTO (`code` / `message`) and a global exception handler so the frontend can branch on 401 / 403 / 404 / 5xx without parsing text.
+- [x] Error responses are bare `HTTPException(detail: str)` with no machine-readable code; the ban reason is embedded in the message string. Define a structured error DTO (`code` / `message`) and a global exception handler so the frontend can branch on 401 / 403 / 404 / 5xx without parsing text.
 
 ## Frontend
 
@@ -42,10 +42,10 @@
 - [x] Migration to UnoCSS with CSS-variable theming (`uno.config.ts` + `src/index.css`); legacy per-page CSS removed.
 - [ ] Admin UI (problem editor, user list, ban management) is not built; admin endpoints are backend-only.
 - [ ] Extract shared utilities / components / helper types where duplicated.
-- [ ] No global HTTP error handling; `fetchJson` collapses every non-2xx into a generic `Error`, so 401 / 403 / 404 / 5xx are indistinguishable. Introduce `ApiError { status, detail }` and auto sign-out + redirect on 401 (token expiry / server-side revocation).
-- [ ] `currentUser` / token are read from localStorage with a bare `as MeResponse` cast and no runtime validation; a stale cache from an older schema silently flows into the UI (the `role` rename hit this). Validate the stored shape and drop invalid cache.
-- [ ] Token expiry is not checked client-side; the UI stays "signed in" until the first 401. Decode the JWT `exp` on write and treat expired tokens as signed out without firing a request.
-- [ ] localStorage auth state is not synced across tabs; signing out in one tab leaves others showing the old `state`. Listen for the `storage` event and reconcile.
+- [x] No global HTTP error handling; `fetchJson` collapses every non-2xx into a generic `Error`, so 401 / 403 / 404 / 5xx are indistinguishable. Introduce `ApiError { status, detail }` and auto sign-out + redirect on 401 (token expiry / server-side revocation).
+- [x] `currentUser` / token are read from localStorage with a bare `as MeResponse` cast and no runtime validation; a stale cache from an older schema silently flows into the UI (the `role` rename hit this). Validate the stored shape and drop invalid cache.
+- [x] Token expiry is not checked client-side; the UI stays "signed in" until the first 401. Decode the JWT `exp` on write and treat expired tokens as signed out without firing a request.
+- [x] localStorage auth state is not synced across tabs; signing out in one tab leaves others showing the old `state`. Listen for the `storage` event and reconcile.
 
 ## Meta
 
