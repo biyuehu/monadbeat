@@ -12,6 +12,8 @@ class MeResponse(BaseModel):
   created_at: datetime
   role: Role
   is_banned: bool
+  ban_reason: str | None = None
+  ban_expires_at: datetime | None = None
 
 
 class PublicUserResponse(BaseModel):

@@ -6,7 +6,7 @@ import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
 import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../types'
 
-type Feedback = { kind: 'ok' | 'error' | 'info'; text: string }
+type Feedback = { kind: 'ok' | 'error' | 'info'; text: string; detail?: string }
 
 const escapeHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -208,10 +208,14 @@ export const Quiz = (): JSX.Element => {
     Effect.runPromise(submitAnswer(p.slug, userAnswer, token))
       .then((res) => {
         if (res.is_correct) {
-          setFeedback({ kind: 'ok', text: '✅ Correct! Moving on...' })
-          setTimeout(goNext, 700)
+          setFeedback({ kind: 'ok', text: '✅ Correct! Moving on to next problem...' })
+          setTimeout(goNext, 800)
         } else {
-          setFeedback({ kind: 'error', text: `❌ ${res.judge_detail ?? 'Try again.'}` })
+          setFeedback({
+            kind: 'error',
+            text: '❌ Incorrect answer',
+            detail: res.judge_detail ?? undefined
+          })
         }
       })
       .catch((err) => setFeedback({ kind: 'error', text: `❌ ${String(err)}` }))
@@ -340,18 +344,24 @@ export const Quiz = (): JSX.Element => {
                 type="button"
                 class="btn max-md:flex-1 px-[22px] py-2 text-[0.72rem]"
                 onClick={submit}
-                disabled={submitting()}
+                disabled={submitting() || auth.user?.is_banned}
+                title={auth.user?.is_banned ? 'Submissions disabled: Account banned' : undefined}
               >
-                ✓ Submit
+                {auth.user?.is_banned ? '🚫 Banned' : '✓ Submit'}
               </button>
             </div>
 
             <Show when={feedback()}>
               {(fb) => (
                 <div
-                  class={`w-full max-w-200 mx-auto mb-3 px-3.5 py-2.5 text-[0.8rem] leading-relaxed whitespace-pre-wrap break-words border-l-3 shrink-0 ${feedbackClass[fb().kind]}`}
+                  class={`w-full max-w-200 mx-auto mb-3 px-3.5 py-2.5 text-[0.8rem] leading-relaxed break-words border-l-3 shrink-0 ${feedbackClass[fb().kind]}`}
                 >
-                  {fb().text}
+                  <div class="font-semibold mb-1">{fb().text}</div>
+                  <Show when={fb().detail}>
+                    <pre class="mt-2 p-2.5 bg-black/40 border border-sep rounded text-xs font-mono text-fg overflow-x-auto whitespace-pre-wrap">
+                      {fb().detail}
+                    </pre>
+                  </Show>
                 </div>
               )}
             </Show>

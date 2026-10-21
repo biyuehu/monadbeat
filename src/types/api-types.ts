@@ -422,6 +422,10 @@ export interface components {
       role: 'user' | 'admin' | 'superadmin'
       /** Is Banned */
       is_banned: boolean
+      /** Ban Reason */
+      ban_reason?: string | null
+      /** Ban Expires At */
+      ban_expires_at?: string | null
     }
     /** PaginatedResponse[ProblemAdminItem] */
     PaginatedResponse_ProblemAdminItem_: {

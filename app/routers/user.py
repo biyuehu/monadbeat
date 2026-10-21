@@ -16,12 +16,15 @@ def get_me(
   session: Session = Depends(get_session),
 ) -> MeResponse:
   assert user.id is not None
+  ban = active_ban(session, user.id)
   return MeResponse(
     username=user.username,
     avatar_url=user.avatar_url,
     created_at=user.created_at,
     role=role_of(user),
-    is_banned=active_ban(session, user.id) is not None,
+    is_banned=ban is not None,
+    ban_reason=ban.reason if ban else None,
+    ban_expires_at=ban.expires_at if ban else None,
   )
 
 
