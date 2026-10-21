@@ -37,6 +37,7 @@ class ProgressItem(BaseModel):
   problem_slug: str
   status: Literal["correct", "wrong"]
   attempts: int
+  first_attempt_correct: bool = False
 
 
 class ProgressResponse(BaseModel):

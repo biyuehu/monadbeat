@@ -67,21 +67,48 @@ def list_progress(
   user: User = Depends(get_current_user),
   session: Session = Depends(get_session),
 ) -> ProgressResponse:
+  sub_ranked = (
+    select(
+      col(Submission.problem_id),
+      col(Submission.is_correct),
+      func.row_number()
+      .over(
+        partition_by=col(Submission.problem_id),
+        order_by=col(Submission.submitted_at).asc(),
+      )
+      .label("rn"),
+    )
+    .where(col(Submission.user_id) == user.id)
+    .subquery()
+  )
+
+  first_attempts = session.exec(
+    select(sub_ranked.c.problem_id, sub_ranked.c.is_correct).where(sub_ranked.c.rn == 1)
+  ).all()
+  first_correct_map = {prob_id: bool(correct) for prob_id, correct in first_attempts}
+
   rows = session.exec(
-    select(Problem.slug, func.count(), func.bool_or(Submission.is_correct))
+    select(
+      col(Problem.id),
+      col(Problem.slug),
+      func.count(col(Submission.id)),
+      func.bool_or(col(Submission.is_correct)),
+    )
     .select_from(Submission)
     .join(Problem)
-    .where(Submission.user_id == user.id)
-    .group_by(Problem.slug)
+    .where(col(Submission.user_id) == user.id)
+    .group_by(col(Problem.id), col(Problem.slug))
   ).all()
+
   return ProgressResponse(
     items=[
       ProgressItem(
         problem_slug=slug,
         status="correct" if solved else "wrong",
         attempts=count,
+        first_attempt_correct=first_correct_map.get(prob_id, False),
       )
-      for slug, count, solved in rows
+      for prob_id, slug, count, solved in rows
     ]
   )
 

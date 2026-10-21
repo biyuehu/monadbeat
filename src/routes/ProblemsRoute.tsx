@@ -17,18 +17,23 @@ import {
 
 const stars = (difficulty: number): string => Array.from({ length: 5 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
 
-type Status = 'todo' | 'correct' | 'wrong'
+type Status = 'todo' | 'correct' | 'first_correct' | 'wrong'
 
 const statusStyle: Record<Status, { icon: string; icon2: string; iconCls: string; chipCls: string }> = {
   todo: { icon: '🔘', icon2: '-', iconCls: 'text-faint', chipCls: 'border-chip-line text-dim bg-row' },
+  first_correct: { icon: '🔵', icon2: '★', iconCls: 'text-accent', chipCls: 'border-accent text-accent bg-brand-bg' },
   correct: { icon: '🟢', icon2: '√', iconCls: 'text-ok', chipCls: 'border-ok text-ok bg-ok-bg' },
   wrong: { icon: '🔴', icon2: '×', iconCls: 'text-err', chipCls: 'border-err text-err bg-err-bg' }
 }
 
 const statusLabel = (status: Status, attempts: number): string => `${statusStyle[status].icon2} ${attempts}`
 
-const statusTitle = (status: Status, attempts: number): string =>
-  `${status === 'todo' ? 'Not attempted' : status === 'correct' ? 'Solved' : 'Not solved yet'} · ${attempts} attempt${attempts === 1 ? '' : 's'}`
+const statusTitle = (status: Status, attempts: number): string => {
+  if (status === 'todo') return `Not attempted · 0 attempts`
+  if (status === 'first_correct') return `Solved on 1st attempt! · ${attempts} attempt${attempts === 1 ? '' : 's'}`
+  if (status === 'correct') return `Solved · ${attempts} attempt${attempts === 1 ? '' : 's'}`
+  return `Not solved yet · ${attempts} attempt${attempts === 1 ? '' : 's'}`
+}
 
 export const ProblemsRoute = (): JSX.Element => {
   const navigate = useNavigate()
@@ -58,6 +63,9 @@ export const ProblemsRoute = (): JSX.Element => {
   const statusOf = (slug: string): { status: Status; attempts: number } => {
     const item = progress().get(slug)
     if (item === undefined) return { status: 'todo', attempts: 0 }
+    if (item.first_attempt_correct) {
+      return { status: 'first_correct', attempts: item.attempts }
+    }
     return { status: item.status, attempts: item.attempts }
   }
 
