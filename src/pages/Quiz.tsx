@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from '@solidjs/router'
 import { Effect } from 'effect'
-import { createSignal, For, type JSX, Show } from 'solid-js'
+import { createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js'
 import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
@@ -116,6 +116,15 @@ export const Quiz = (): JSX.Element => {
     .then((slug) => (slug === undefined ? navigate('/') : load(slug)))
     .catch(() => navigate('/'))
 
+  const goPrev = (): void => {
+    const slug = problem()?.slug
+    if (slug === undefined) return
+    const idx = list().findIndex((p) => p.slug === slug)
+    if (idx > 0) {
+      navigate(`/quiz/${list()[idx - 1].slug}`)
+    }
+  }
+
   const goNext = (): void => {
     const slug = problem()?.slug
     if (slug === undefined) return
@@ -130,6 +139,51 @@ export const Quiz = (): JSX.Element => {
     setSelected(-1)
     setFeedback(null)
   }
+
+  const handleGlobalKeyDown = (e: KeyboardEvent): void => {
+    const p = problem()
+    if (!p) return
+
+    // If focus is in an input or textarea, let it handle Enter or standard keys
+    const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase()
+    const inInput = tag === 'input' || tag === 'textarea'
+
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      submit()
+      return
+    }
+
+    if (!inInput) {
+      if (p.problem_type === 'predict_behavior') {
+        const key = e.key.toUpperCase()
+        if (key >= 'A' && key <= 'D') {
+          const idx = key.charCodeAt(0) - 65
+          const optsCount = isChoice(p.display) ? p.display.options.length : 0
+          if (idx < optsCount) {
+            e.preventDefault()
+            setSelected(idx)
+          }
+        }
+      }
+
+      if (e.key === 'ArrowRight' && (e.altKey || e.ctrlKey)) {
+        e.preventDefault()
+        goNext()
+      } else if (e.key === 'ArrowLeft' && (e.altKey || e.ctrlKey)) {
+        e.preventDefault()
+        goPrev()
+      }
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener('keydown', handleGlobalKeyDown)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener('keydown', handleGlobalKeyDown)
+  })
 
   const submit = (): void => {
     const p = problem()
@@ -204,9 +258,17 @@ export const Quiz = (): JSX.Element => {
           <Frame title="Quiz">
             <div class="page-header items-baseline">
               <span class="page-title text-xl md:text-2xl">{headerOf(p)}</span>
-              <span class="px-3 py-0.5 text-xs tracking-wide text-soft border border-edge bg-brand-bg">
-                {progressText()}
-              </span>
+              <div class="flex items-center gap-2">
+                <button type="button" class="btn-xs btn-muted" title="Previous Problem (Ctrl/Alt + ←)" onClick={goPrev}>
+                  ← Prev
+                </button>
+                <span class="px-3 py-0.5 text-xs tracking-wide text-soft border border-edge bg-brand-bg">
+                  {progressText()}
+                </span>
+                <button type="button" class="btn-xs btn-muted" title="Next Problem (Ctrl/Alt + →)" onClick={goNext}>
+                  Next →
+                </button>
+              </div>
             </div>
 
             <div class={areaCls}>
@@ -258,6 +320,12 @@ export const Quiz = (): JSX.Element => {
                     onInput={(e) => {
                       setAnswer(e.currentTarget.value)
                       setFeedback(null)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        submit()
+                      }
                     }}
                   />
                 </div>

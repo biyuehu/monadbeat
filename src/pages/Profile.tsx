@@ -6,7 +6,7 @@ import { Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { applyTheme, theme } from '../lib/theme'
-import type { ProblemListItem } from '../types'
+import type { ProblemListItem, ProgressItem } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
@@ -59,7 +59,7 @@ export const Profile = (): JSX.Element => {
   const { state: auth, signOut } = useAuth()
   const navigate = useNavigate()
   const [view, setView] = createSignal<View>('info')
-  const [solved, setSolved] = createSignal<ReadonlySet<string>>(new Set())
+  const [solved, setSolved] = createSignal<ReadonlyMap<string, ProgressItem>>(new Map())
   const [problems, setProblems] = createSignal<readonly ProblemListItem[]>([])
   const [donePage, setDonePage] = createSignal(1)
   const donePageSize = 12
@@ -71,12 +71,12 @@ export const Profile = (): JSX.Element => {
   const loadSolved = (): void => {
     const token = auth.token
     if (token === null) {
-      setSolved(new Set<string>())
+      setSolved(new Map<string, ProgressItem>())
       return
     }
     Effect.runPromise(fetchProgress(token))
-      .then((items) => setSolved(new Set(items.filter((i) => i.status === 'correct').map((i) => i.problem_slug))))
-      .catch(() => setSolved(new Set<string>()))
+      .then((items) => setSolved(new Map(items.filter((i) => i.status === 'correct').map((i) => [i.problem_slug, i]))))
+      .catch(() => setSolved(new Map<string, ProgressItem>()))
   }
 
   loadSolved()
@@ -84,6 +84,7 @@ export const Profile = (): JSX.Element => {
   const visibleNav = (): typeof navItems => navItems.filter((i) => !i.needAuth || auth.user !== null)
 
   const solvedCount = (): number => solved().size
+  const firstTryCount = (): number => Array.from(solved().values()).filter((i) => i.first_attempt_correct).length
 
   const doneProblems = (): ProblemListItem[] => problems().filter((p) => solved().has(p.slug))
 
@@ -171,8 +172,18 @@ export const Profile = (): JSX.Element => {
                   <div class="px-3 py-2.5 bg-row text-err">Banned</div>
                 </Show>
                 <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Solved</div>
-                <div class="px-3 py-2.5 bg-row text-fg">
-                  {solvedCount()} / {problems().length}
+                <div class="px-3 py-2.5 bg-row text-fg flex items-center gap-2">
+                  <span>
+                    {solvedCount()} / {problems().length}
+                  </span>
+                  <Show when={firstTryCount() > 0}>
+                    <span
+                      class="text-xs text-accent bg-brand-bg border border-accent/40 rounded px-1.5 py-0.2"
+                      title="Solved on first attempt"
+                    >
+                      🔵 {firstTryCount()} 1st try
+                    </span>
+                  </Show>
                 </div>
               </div>
             </Show>
@@ -191,20 +202,38 @@ export const Profile = (): JSX.Element => {
                 }
               >
                 <For each={pagedDoneProblems()}>
-                  {(problem) => (
-                    <div class="group flex items-center gap-3.5 px-3 py-2 bg-row transition-colors hover:bg-hl">
-                      <span class="w-5 shrink-0 text-center text-[0.85rem] text-ok">✓</span>
-                      <span class="flex-1 min-w-0 truncate text-[0.78rem] text-text2 group-hover:text-hl-fg">
-                        {problem.title}
-                      </span>
-                      <span class="chip max-[560px]:hidden group-hover:text-hl-tag group-hover:border-brand">
-                        {problem.problem_type}
-                      </span>
-                      <span class="min-w-14 shrink-0 text-right text-[0.65rem] text-dim group-hover:text-hl-tag">
-                        {stars(problem.difficulty)}
-                      </span>
-                    </div>
-                  )}
+                  {(problem) => {
+                    const prog = () => solved().get(problem.slug)
+                    const isFirst = () => prog()?.first_attempt_correct ?? false
+                    return (
+                      <button
+                        type="button"
+                        class="group flex w-full items-center gap-3.5 px-3 py-2 bg-row text-left font-[inherit] cursor-pointer border-0 border-b border-sep transition-colors hover:bg-hl"
+                        onClick={() => navigate(`/quiz/${problem.slug}`)}
+                      >
+                        <span
+                          class={`w-5 shrink-0 text-center text-[0.85rem] ${isFirst() ? 'text-accent' : 'text-ok'}`}
+                          title={isFirst() ? 'Solved on 1st attempt! (🔵)' : 'Solved (🟢)'}
+                        >
+                          {isFirst() ? '★' : '✓'}
+                        </span>
+                        <span class="flex-1 min-w-0 truncate text-[0.78rem] text-text2 group-hover:text-hl-fg">
+                          {problem.title}
+                        </span>
+                        <Show when={isFirst()}>
+                          <span class="text-[0.62rem] text-accent font-semibold px-1 py-0.2 bg-brand-bg border border-accent/40 rounded">
+                            🔵 1st try
+                          </span>
+                        </Show>
+                        <span class="chip max-[560px]:hidden group-hover:text-hl-tag group-hover:border-brand">
+                          {problem.problem_type}
+                        </span>
+                        <span class="min-w-14 shrink-0 text-right text-[0.65rem] text-dim group-hover:text-hl-tag">
+                          {stars(problem.difficulty)}
+                        </span>
+                      </button>
+                    )
+                  }}
                 </For>
               </Show>
             </div>

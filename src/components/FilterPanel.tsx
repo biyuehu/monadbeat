@@ -1,9 +1,9 @@
 import { type JSX, Show } from 'solid-js'
-import { useFilter } from '../context/filter'
+import { StatusFilterLabel, StatusFilterOrder, useFilter } from '../context/filter'
 import { ProblemTypeLabel, ProblemTypeOrder } from '../types'
 
 export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.Element => {
-  const { state, set, reset } = useFilter()
+  const { state, setType, setStatus, reset } = useFilter()
 
   return (
     <Show when={props.open}>
@@ -33,21 +33,43 @@ export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.
               ✕
             </button>
           </div>
-          <div class="flex-1 min-h-0 overflow-y-auto px-4 py-4">
-            <div class="section-label mb-3">Problem Type</div>
-            <div class="flex flex-col gap-1">
-              {ProblemTypeOrder.map((key) => (
-                <label class="flex items-center gap-2.5 px-2.5 py-2 border border-sep bg-row cursor-pointer select-none transition-colors hover:bg-brand-tint hover:border-hov">
-                  <input
-                    type="checkbox"
-                    class="m-0 size-[15px] shrink-0 cursor-pointer accent-brand"
-                    checked={state[key]}
-                    onChange={(e) => set(key, e.currentTarget.checked)}
-                  />
-                  <span class="flex-1 text-[0.8rem] text-text2">{ProblemTypeLabel[key]}</span>
-                  <span class="text-[0.58rem] whitespace-nowrap text-dim">{key}</span>
-                </label>
-              ))}
+          <div class="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-5">
+            {/* Status Filter */}
+            <div>
+              <div class="section-label mb-2">Completion Status (完成状态)</div>
+              <div class="flex flex-col gap-1">
+                {StatusFilterOrder.map((key) => (
+                  <label class="flex items-center gap-2.5 px-2.5 py-2 border border-sep bg-row cursor-pointer select-none transition-colors hover:bg-brand-tint hover:border-hov">
+                    <input
+                      type="checkbox"
+                      class="m-0 size-[15px] shrink-0 cursor-pointer accent-brand"
+                      checked={state.status[key]}
+                      onChange={(e) => setStatus(key, e.currentTarget.checked)}
+                    />
+                    <span class="text-sm shrink-0">{StatusFilterLabel[key].icon}</span>
+                    <span class="flex-1 text-[0.8rem] text-text2">{StatusFilterLabel[key].label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Problem Type Filter */}
+            <div>
+              <div class="section-label mb-2">Problem Type (题型)</div>
+              <div class="flex flex-col gap-1">
+                {ProblemTypeOrder.map((key) => (
+                  <label class="flex items-center gap-2.5 px-2.5 py-2 border border-sep bg-row cursor-pointer select-none transition-colors hover:bg-brand-tint hover:border-hov">
+                    <input
+                      type="checkbox"
+                      class="m-0 size-[15px] shrink-0 cursor-pointer accent-brand"
+                      checked={state.types[key]}
+                      onChange={(e) => setType(key, e.currentTarget.checked)}
+                    />
+                    <span class="flex-1 text-[0.8rem] text-text2">{ProblemTypeLabel[key]}</span>
+                    <span class="text-[0.58rem] whitespace-nowrap text-dim">{key}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
           <div class="flex justify-end gap-2 px-4 py-3.5 border-t border-sep">

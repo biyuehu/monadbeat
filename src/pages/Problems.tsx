@@ -53,7 +53,7 @@ export const Problems = (): JSX.Element => {
   // Cache pages keyed by `${search}::${activeTypes}::${page}`
   const pageCache = new Map<string, { items: readonly ProblemListItem[]; total: number }>()
 
-  const activeTypes = (): string[] => ProblemTypeOrder.filter((t) => filter[t as ProblemType])
+  const activeTypes = (): string[] => ProblemTypeOrder.filter((t) => filter.types[t as ProblemType])
 
   const loadProblems = (p: number): void => {
     const s = search().trim()
@@ -105,6 +105,16 @@ export const Problems = (): JSX.Element => {
     }
     return { status: item.status, attempts: item.attempts }
   }
+
+  // Filter items on current page by status (todo / correct / wrong)
+  const displayItems = (): readonly ProblemListItem[] =>
+    items().filter((p) => {
+      const st = statusOf(p.slug).status
+      if (st === 'todo') return filter.status.todo
+      if (st === 'correct' || st === 'first_correct') return filter.status.correct
+      if (st === 'wrong') return filter.status.wrong
+      return true
+    })
 
   const countText = (): string => {
     if (loading()) return 'Loading...'
@@ -173,14 +183,14 @@ export const Problems = (): JSX.Element => {
 
       <div class="list-box flex-1 min-h-25 overflow-y-auto w-full max-w-200 mx-auto">
         <Show when={!loading()} fallback={<div class="status-text text-dim">⏳ Loading problems...</div>}>
-          <Show when={!loading() && total() === 0} fallback={null}>
+          <Show when={!loading() && (total() === 0 || displayItems().length === 0)} fallback={null}>
             <div class="empty-box flex-1">
               <div class="empty-title">No matches</div>
               <div class="empty-text">No problems match your filter or search.</div>
             </div>
           </Show>
 
-          <For each={items()}>
+          <For each={displayItems()}>
             {(problem) => {
               const st = (): { status: Status; attempts: number } => statusOf(problem.slug)
               return (
