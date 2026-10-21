@@ -154,51 +154,55 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
                     <For each={pagedUsers()}>
                       {(u) => (
                         <tr>
-                          <td class="flex items-center gap-2">
-                            <Show when={u.avatar_url}>
-                              <img class="size-5 rounded-full" src={u.avatar_url!} alt="" />
-                            </Show>
-                            <span class="font-mono text-xs text-soft">{u.username}</span>
+                          <td>
+                            <div class="flex items-center gap-2 min-h-6">
+                              <Show when={u.avatar_url}>
+                                <img class="size-5 rounded-full object-cover shrink-0" src={u.avatar_url!} alt="" />
+                              </Show>
+                              <span class="font-mono text-xs text-soft">{u.username}</span>
+                            </div>
                           </td>
                           <td>
                             <RoleBadge role={u.role} />
                           </td>
                           <td class="text-dim text-xs">{fmtDate(u.created_at)}</td>
-                          <td class="flex gap-1.5">
-                            <Show when={isSuperadmin() && u.role === 'user'}>
+                          <td>
+                            <div class="flex items-center gap-1.5 min-h-6">
+                              <Show when={isSuperadmin() && u.role === 'user'}>
+                                <button
+                                  type="button"
+                                  class="btn-xs btn-muted"
+                                  disabled={busy() === u.username}
+                                  onClick={() => promote(u)}
+                                >
+                                  Promote
+                                </button>
+                              </Show>
+                              <Show when={isSuperadmin() && u.role === 'admin'}>
+                                <button
+                                  type="button"
+                                  class="btn-xs btn-muted"
+                                  disabled={busy() === u.username}
+                                  onClick={() => demote(u)}
+                                >
+                                  Demote
+                                </button>
+                              </Show>
                               <button
                                 type="button"
-                                class="btn-xs btn-muted"
-                                disabled={busy() === u.username}
-                                onClick={() => promote(u)}
+                                class="btn-xs btn-danger"
+                                disabled={
+                                  !(
+                                    u.role !== 'superadmin' &&
+                                    u.username !== state.user?.username &&
+                                    (u.role !== 'admin' || state.user?.role === 'superadmin')
+                                  ) || busy() === u.username
+                                }
+                                onClick={() => openBan(u)}
                               >
-                                Promote
+                                Ban
                               </button>
-                            </Show>
-                            <Show when={isSuperadmin() && u.role === 'admin'}>
-                              <button
-                                type="button"
-                                class="btn-xs btn-muted"
-                                disabled={busy() === u.username}
-                                onClick={() => demote(u)}
-                              >
-                                Demote
-                              </button>
-                            </Show>
-                            <button
-                              type="button"
-                              class="btn-xs btn-danger"
-                              disabled={
-                                !(
-                                  u.role !== 'superadmin' &&
-                                  u.username !== state.user?.username &&
-                                  (u.role !== 'admin' || state.user?.role === 'superadmin')
-                                ) || busy() === u.username
-                              }
-                              onClick={() => openBan(u)}
-                            >
-                              Ban
-                            </button>
+                            </div>
                           </td>
                         </tr>
                       )}

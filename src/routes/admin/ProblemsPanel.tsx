@@ -109,18 +109,20 @@ export const ProblemsPanel = (props: { token: string }): JSX.Element => {
                             {p.is_published ? 'Live' : 'Draft'}
                           </button>
                         </td>
-                        <td class="flex gap-1.5">
-                          <button type="button" class="btn-xs btn-muted" onClick={() => setEditing(p)}>
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            class="btn-xs btn-danger"
-                            disabled={busy() === p.slug}
-                            onClick={() => deleteProblem(p)}
-                          >
-                            Del
-                          </button>
+                        <td>
+                          <div class="flex items-center gap-1.5 min-h-6">
+                            <button type="button" class="btn-xs btn-muted" onClick={() => setEditing(p)}>
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              class="btn-xs btn-danger"
+                              disabled={busy() === p.slug}
+                              onClick={() => deleteProblem(p)}
+                            >
+                              Del
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )}

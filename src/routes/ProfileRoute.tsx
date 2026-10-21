@@ -2,6 +2,7 @@ import { useNavigate } from '@solidjs/router'
 import { Effect } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { Frame } from '../components/Frame'
+import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { fetchAllProblems, fetchProgress } from '../lib/api'
 import { applyTheme, theme } from '../lib/theme'
@@ -60,6 +61,8 @@ export const ProfileRoute = (): JSX.Element => {
   const [view, setView] = createSignal<View>('info')
   const [solved, setSolved] = createSignal<ReadonlySet<string>>(new Set())
   const [problems, setProblems] = createSignal<readonly ProblemListItem[]>([])
+  const [donePage, setDonePage] = createSignal(1)
+  const donePageSize = 12
 
   Effect.runPromise(fetchAllProblems())
     .then(setProblems)
@@ -83,6 +86,12 @@ export const ProfileRoute = (): JSX.Element => {
   const solvedCount = (): number => solved().size
 
   const doneProblems = (): ProblemListItem[] => problems().filter((p) => solved().has(p.slug))
+
+  const pagedDoneProblems = (): ProblemListItem[] => {
+    const list = doneProblems()
+    const start = (donePage() - 1) * donePageSize
+    return list.slice(start, start + donePageSize)
+  }
 
   return (
     <Frame title="Profile" flush class="md:flex-row md:overflow-hidden">
@@ -181,7 +190,7 @@ export const ProfileRoute = (): JSX.Element => {
                   </div>
                 }
               >
-                <For each={doneProblems()}>
+                <For each={pagedDoneProblems()}>
                   {(problem) => (
                     <div class="group flex items-center gap-3.5 px-3 py-2 bg-row transition-colors hover:bg-hl">
                       <span class="w-5 shrink-0 text-center text-[0.85rem] text-ok">✓</span>
@@ -199,6 +208,15 @@ export const ProfileRoute = (): JSX.Element => {
                 </For>
               </Show>
             </div>
+
+            <Show when={doneProblems().length > 0}>
+              <Pagination
+                page={donePage()}
+                pageSize={donePageSize}
+                total={doneProblems().length}
+                onPageChange={(p) => setDonePage(p)}
+              />
+            </Show>
           </Show>
 
           <Show when={view() === 'theme'}>

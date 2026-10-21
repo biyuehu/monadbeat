@@ -52,10 +52,10 @@
 
 body.theme-light {
   --fg: #2c2c34;
-  --panel: #fff;
-  --panel2: #faf9fd;
-  --line: #d8d0e8;
-  --sep: #e6e1f0;
+  --panel: #f7f5fb;
+  --panel2: #efeaf6;
+  --line: #dcd4eb;
+  --sep: #e4ddf0;
   --edge: #d8d0e8;
   --accent: #6b4fa0;
   --soft: #7c5cbf;
@@ -66,7 +66,7 @@ body.theme-light {
   --strong: #3b2f52;
   --head: rgb(228, 222, 240);
   --sel: #7c5cbf;
-  --row: #faf9fd;
+  --row: #f4f0fa;
   --hov: #c9bce6;
   --count-line: #b9a6dd;
   --nav: #6d6a78;
@@ -81,8 +81,8 @@ body.theme-light {
   --err: #d64545;
   --err-line: #f0c8c8;
   --warn: #b7791f;
-  --input: #fff;
-  --input-line: #e0daec;
+  --input: #ffffff;
+  --input-line: #dcd4eb;
   --tag-line: #ddd6ea;
   --tag-fg: #8a8299;
   --ghost-line: #d8d0e8;
@@ -234,20 +234,23 @@ body.theme-light {
 }
 
 .admin-table {
+  width: 100%;
   border-collapse: collapse;
   text-align: left;
 }
 .admin-table th {
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--sep);
   color: var(--dim);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  vertical-align: middle;
 }
 .admin-table td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--sep);
+  vertical-align: middle;
 }
 .admin-table tr:hover td {
   background: var(--row);
