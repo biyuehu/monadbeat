@@ -185,16 +185,20 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
                                 Demote
                               </button>
                             </Show>
-                            <Show when={u.role !== 'superadmin' && u.username !== state.user?.username}>
-                              <button
-                                type="button"
-                                class="btn-xs btn-danger"
-                                disabled={busy() === u.username}
-                                onClick={() => openBan(u)}
-                              >
-                                Ban
-                              </button>
-                            </Show>
+                            <button
+                              type="button"
+                              class="btn-xs btn-danger"
+                              disabled={
+                                !(
+                                  u.role !== 'superadmin' &&
+                                  u.username !== state.user?.username &&
+                                  (u.role !== 'admin' || state.user?.role === 'superadmin')
+                                ) || busy() === u.username
+                              }
+                              onClick={() => openBan(u)}
+                            >
+                              Ban
+                            </button>
                           </td>
                         </tr>
                       )}
