@@ -24,31 +24,68 @@ def _col(attr: Any) -> Any:
 
 
 def compute_leaderboard(session: Session, limit: int) -> list[LeaderboardEntry]:
-  # Deduplicate (user, problem) pairs first: a user who submitted the same
-  # problem correctly multiple times must only be scored once.
-  solved = (
-    select(
-      _col(Submission.user_id).label("user_id"),
-      _col(Submission.problem_id).label("problem_id"),
-      _col(Problem.difficulty).label("difficulty"),
-      _col(Problem.problem_type).label("problem_type"),
+  # Step 1: Chronologically rank all submissions for each (user, problem) pair.
+  sub_ranked = select(
+    _col(Submission.user_id).label("user_id"),
+    _col(Submission.problem_id).label("problem_id"),
+    _col(Submission.is_correct).label("is_correct"),
+    func.row_number()
+    .over(
+      partition_by=(_col(Submission.user_id), _col(Submission.problem_id)),
+      order_by=_col(Submission.submitted_at).asc(),
     )
-    .join(Problem, _col(Submission.problem_id) == _col(Problem.id))
-    .where(_col(Submission.is_correct) == True)
-    .where(_col(Problem.difficulty).between(1, 5))
-    .where(_col(Problem.problem_type).in_(list(PROBLEM_TYPE_MULTIPLIER.keys())))
-    .distinct()
+    .label("attempt_number"),
+  ).subquery()
+
+  # Step 2: Find the attempt count at which the user first correctly solved the problem.
+  first_solve = (
+    select(
+      sub_ranked.c.user_id.label("user_id"),
+      sub_ranked.c.problem_id.label("problem_id"),
+      func.min(sub_ranked.c.attempt_number).label("attempts_to_solve"),
+    )
+    .where(sub_ranked.c.is_correct == True)
+    .group_by(sub_ranked.c.user_id, sub_ranked.c.problem_id)
     .subquery()
   )
 
-  per_problem_score = case(
-    DIFFICULTY_SCORE,
-    value=solved.c.difficulty,
-    else_=0,
-  ) * case(
-    PROBLEM_TYPE_MULTIPLIER,
-    value=solved.c.problem_type,
-    else_=0.0,
+  # Step 3: Join with published problem metadata.
+  solved = (
+    select(
+      first_solve.c.user_id.label("user_id"),
+      first_solve.c.problem_id.label("problem_id"),
+      first_solve.c.attempts_to_solve.label("attempts_to_solve"),
+      _col(Problem.difficulty).label("difficulty"),
+      _col(Problem.problem_type).label("problem_type"),
+    )
+    .join(Problem, first_solve.c.problem_id == _col(Problem.id))
+    .where(_col(Problem.difficulty).between(1, 5))
+    .where(_col(Problem.problem_type).in_(list(PROBLEM_TYPE_MULTIPLIER.keys())))
+    .subquery()
+  )
+
+  # Attempt multiplier:
+  # - 1st attempt: 1.5x
+  # - <= 3 attempts: 1.0x
+  # - > 3 attempts: 0.5x
+  attempt_factor = case(
+    (solved.c.attempts_to_solve <= 1, 1.5),
+    (solved.c.attempts_to_solve <= 3, 1.0),
+    else_=0.5,
+  )
+
+  per_problem_score = (
+    case(
+      DIFFICULTY_SCORE,
+      value=solved.c.difficulty,
+      else_=0,
+    )
+    * case(
+      PROBLEM_TYPE_MULTIPLIER,
+      value=solved.c.problem_type,
+      else_=0.0,
+    )
+    * attempt_factor
   )
 
   total_score = func.sum(per_problem_score).label("score")

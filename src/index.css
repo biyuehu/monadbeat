@@ -203,13 +203,14 @@ button:disabled,
 }
 
 .btn-muted {
-  background: var(--row);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--fg);
-  border: 1px solid var(--sep);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 .btn-muted:hover:not(:disabled) {
   background: var(--hov);
   border-color: var(--edge);
+  color: #fff;
 }
 
 .btn-ok {
