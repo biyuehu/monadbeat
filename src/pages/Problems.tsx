@@ -1,19 +1,13 @@
 import { useNavigate } from '@solidjs/router'
 import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
+import { fetchAllProblems, fetchProgress } from '../api'
 import { FilterPanel } from '../components/FilterPanel'
 import { FooterLine, Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
-import { fetchAllProblems, fetchProgress } from '../lib/api'
-import {
-  isProblemType,
-  type ProblemListItem,
-  ProblemTypeLabel,
-  ProblemTypeOrder,
-  type ProgressItem
-} from '../lib/types'
+import { isProblemType, type ProblemListItem, ProblemTypeLabel, ProblemTypeOrder, type ProgressItem } from '../types'
 
 const stars = (difficulty: number): string => Array.from({ length: 5 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
 
@@ -35,7 +29,7 @@ const statusTitle = (status: Status, attempts: number): string => {
   return `Not solved yet · ${attempts} attempt${attempts === 1 ? '' : 's'}`
 }
 
-export const ProblemsRoute = (): JSX.Element => {
+export const Problems = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
   const { state: filter, isFiltering } = useFilter()

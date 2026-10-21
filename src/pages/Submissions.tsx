@@ -1,11 +1,11 @@
 import { A, useNavigate } from '@solidjs/router'
 import { Effect, flow } from 'effect'
 import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { fetchSubmissions } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
-import { fetchSubmissions } from '../lib/api'
-import type { SubmissionListItem } from '../lib/types'
+import type { SubmissionListItem } from '../types'
 
 type Filter = 'all' | 'correct' | 'wrong'
 
@@ -22,7 +22,7 @@ const formatFull = (iso: string): string => new Date(iso).toLocaleString()
 
 const blockLabel = 'mb-1.5 text-[0.62rem] uppercase tracking-widest text-muted'
 
-export const SubmissionsRoute = (): JSX.Element => {
+export const Submissions = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
   const [items, setItems] = createSignal<readonly SubmissionListItem[]>([])

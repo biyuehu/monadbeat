@@ -1,6 +1,6 @@
 import { Effect } from 'effect'
-import { ApiError } from './api'
-import type { components } from './api-types'
+import type { components } from '../types/api-types'
+import { ApiError } from './index'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 

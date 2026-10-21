@@ -1,9 +1,9 @@
 import { Effect } from 'effect'
 import { createContext, type JSX, onCleanup, onMount, useContext } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import { ApiError, fetchMe, setUnauthorizedHandler } from '../lib/api'
+import { ApiError, fetchMe, setUnauthorizedHandler } from '../api'
 import { clearCurrentUser, clearToken, readCurrentUser, readToken, writeCurrentUser, writeToken } from '../lib/storage'
-import type { MeResponse } from '../lib/types'
+import type { MeResponse } from '../types'
 
 type AuthStore = {
   user: MeResponse | null

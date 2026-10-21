@@ -1,5 +1,5 @@
 import { Option } from 'effect'
-import type { MeResponse } from './types'
+import type { MeResponse } from '../types'
 
 const CURRENT_USER_KEY = 'monadbeat.currentUser'
 const TOKEN_KEY = 'monadbeat.token'

@@ -6,7 +6,7 @@ import {
   adminUpdateProblem,
   type ProblemAdminDetail,
   type ProblemCreate
-} from '../../lib/adminApi'
+} from '../../api/admin'
 
 // ── Tiny form helper ──────────────────────────────────────────────────────
 const Field = (props: { label: string; children: JSX.Element; required?: boolean }): JSX.Element => (

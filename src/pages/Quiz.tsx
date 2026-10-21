@@ -1,10 +1,10 @@
 import { useNavigate, useParams } from '@solidjs/router'
 import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
+import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
-import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../lib/api'
-import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../lib/types'
+import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../types'
 
 type Feedback = { kind: 'ok' | 'error' | 'info'; text: string }
 
@@ -78,7 +78,7 @@ const isText = (display: Display): display is TextDisplay =>
 const labelCls = 'block mb-2 text-[0.72rem] uppercase tracking-wider text-muted'
 const areaCls = 'w-full max-w-200 mx-auto mb-5 shrink-0'
 
-export const QuizRoute = (): JSX.Element => {
+export const Quiz = (): JSX.Element => {
   const navigate = useNavigate()
   const params = useParams<{ id: string }>()
   const { state: auth } = useAuth()

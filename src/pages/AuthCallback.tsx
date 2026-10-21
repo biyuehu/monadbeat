@@ -1,11 +1,11 @@
 import { useNavigate, useSearchParams } from '@solidjs/router'
 import { Effect } from 'effect'
 import { createEffect, type JSX } from 'solid-js'
+import { fetchMe } from '../api'
 import { Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
-import { fetchMe } from '../lib/api'
 
-export const AuthCallbackRoute = (): JSX.Element => {
+export const AuthCallback = (): JSX.Element => {
   const [params] = useSearchParams<{ token?: string }>()
   const { signIn } = useAuth()
   const navigate = useNavigate()

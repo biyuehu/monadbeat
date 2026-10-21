@@ -70,7 +70,7 @@ jobs:
       - name: Generate OpenAPI & TypeScript types
         run: |
           uv run python -m scripts.export_openapi
-          bunx openapi-typescript openapi.json -o src/lib/api-types.ts
+          bunx openapi-typescript openapi.json -o src/types/api-types.ts
 
       - name: TypeScript typecheck
         run: bun run typecheck

@@ -1,10 +1,10 @@
 import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
+import { fetchLeaderboard } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
-import { fetchLeaderboard } from '../lib/api'
-import type { LeaderboardItem } from '../lib/types'
+import type { LeaderboardItem } from '../types'
 
 const rankColor = (rank: number): string => {
   if (rank === 1) return 'text-warn'
@@ -13,7 +13,7 @@ const rankColor = (rank: number): string => {
   return 'text-dim group-hover:text-hl-fg'
 }
 
-export const LeaderboardRoute = (): JSX.Element => {
+export const Leaderboard = (): JSX.Element => {
   const { state: auth } = useAuth()
   const [entries, setEntries] = createSignal<readonly LeaderboardItem[]>([])
   const [error, setError] = createSignal<string | null>(null)

@@ -15,7 +15,7 @@ build-db:
 
 gen-types:
   uv run python -m scripts.export_openapi
-  bunx openapi-typescript openapi.json -o src/lib/api-types.ts
+  bunx openapi-typescript openapi.json -o src/types/api-types.ts
 
 seed:
   uv run python -m scripts.seed

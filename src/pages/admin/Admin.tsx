@@ -7,7 +7,7 @@ import { UsersPanel } from './UsersPanel'
 
 type Tab = 'problems' | 'users'
 
-export const AdminRoute = (): JSX.Element => {
+export const Admin = (): JSX.Element => {
   const { state } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = createSignal<Tab>('problems')

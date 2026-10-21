@@ -8,7 +8,7 @@ import type {
   ProgressItem,
   SubmissionListResponse,
   SubmissionResponse
-} from './types'
+} from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 

@@ -1,12 +1,12 @@
 import { useNavigate } from '@solidjs/router'
 import { Effect } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
+import { fetchAllProblems, fetchProgress } from '../api'
 import { Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
-import { fetchAllProblems, fetchProgress } from '../lib/api'
 import { applyTheme, theme } from '../lib/theme'
-import type { ProblemListItem } from '../lib/types'
+import type { ProblemListItem } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
@@ -55,7 +55,7 @@ const Welcome = (): JSX.Element => (
   </div>
 )
 
-export const ProfileRoute = (): JSX.Element => {
+export const Profile = (): JSX.Element => {
   const { state: auth, signOut } = useAuth()
   const navigate = useNavigate()
   const [view, setView] = createSignal<View>('info')

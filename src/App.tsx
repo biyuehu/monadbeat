@@ -1,13 +1,13 @@
 import { Route, Router } from '@solidjs/router'
 import type { JSX } from 'solid-js'
 import { Headbar } from './components/Headbar'
-import { AuthCallbackRoute } from './routes/AuthCallbackRoute'
-import { AdminRoute } from './routes/admin/AdminRoute'
-import { LeaderboardRoute } from './routes/LeaderboardRoute'
-import { ProblemsRoute } from './routes/ProblemsRoute'
-import { ProfileRoute } from './routes/ProfileRoute'
-import { QuizRoute } from './routes/QuizRoute'
-import { SubmissionsRoute } from './routes/SubmissionsRoute'
+import { AuthCallback } from './pages/AuthCallback'
+import { Admin } from './pages/admin/Admin'
+import { Leaderboard } from './pages/Leaderboard'
+import { Problems } from './pages/Problems'
+import { Profile } from './pages/Profile'
+import { Quiz } from './pages/Quiz'
+import { Submissions } from './pages/Submissions'
 
 export const App = (): JSX.Element => (
   <Router
@@ -18,12 +18,12 @@ export const App = (): JSX.Element => (
       </>
     )}
   >
-    <Route path="/" component={ProblemsRoute} />
-    <Route path="/quiz/:id" component={QuizRoute} />
-    <Route path="/auth/callback" component={AuthCallbackRoute} />
-    <Route path="/leaderboard" component={LeaderboardRoute} />
-    <Route path="/submissions" component={SubmissionsRoute} />
-    <Route path="/profile" component={ProfileRoute} />
-    <Route path="/admin" component={AdminRoute} />
+    <Route path="/" component={Problems} />
+    <Route path="/quiz/:id" component={Quiz} />
+    <Route path="/auth/callback" component={AuthCallback} />
+    <Route path="/leaderboard" component={Leaderboard} />
+    <Route path="/submissions" component={Submissions} />
+    <Route path="/profile" component={Profile} />
+    <Route path="/admin" component={Admin} />
   </Router>
 )

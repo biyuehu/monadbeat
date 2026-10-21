@@ -1,6 +1,6 @@
 import { type JSX, Show } from 'solid-js'
 import { useFilter } from '../context/filter'
-import { ProblemTypeLabel, ProblemTypeOrder } from '../lib/types'
+import { ProblemTypeLabel, ProblemTypeOrder } from '../types'
 
 export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.Element => {
   const { state, set, reset } = useFilter()

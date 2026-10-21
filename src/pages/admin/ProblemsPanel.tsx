@@ -1,9 +1,9 @@
 import { Effect } from 'effect'
 import { createResource, createSignal, For, type JSX, Match, Show, Suspense, Switch } from 'solid-js'
+import { adminDeleteProblem, adminListProblems, adminPublishToggle, type ProblemAdminItem } from '../../api/admin'
 import { Pagination } from '../../components/Pagination'
 import { useDialog } from '../../context/dialog'
-import { adminDeleteProblem, adminListProblems, adminPublishToggle, type ProblemAdminItem } from '../../lib/adminApi'
-import { ProblemTypeLabel } from '../../lib/types'
+import { ProblemTypeLabel } from '../../types'
 import { ProblemFormModal } from './ProblemFormModal'
 
 const stars = (n: number): string => '★'.repeat(n) + '☆'.repeat(5 - n)

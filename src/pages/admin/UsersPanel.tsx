@@ -1,8 +1,5 @@
 import { Effect } from 'effect'
 import { createResource, createSignal, For, type JSX, Match, Show, Suspense, Switch } from 'solid-js'
-import { Pagination } from '../../components/Pagination'
-import { useAuth } from '../../context/auth'
-import { useDialog } from '../../context/dialog'
 import {
   adminBanUser,
   adminDemote,
@@ -12,7 +9,10 @@ import {
   adminPromote,
   type BanItem,
   type UserAdminItem
-} from '../../lib/adminApi'
+} from '../../api/admin'
+import { Pagination } from '../../components/Pagination'
+import { useAuth } from '../../context/auth'
+import { useDialog } from '../../context/dialog'
 
 const fmtDate = (d: string | null | undefined): string => {
   if (!d) return '—'
