@@ -3,7 +3,7 @@ import { Effect } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
-import { fetchProblems, fetchProgress } from '../lib/api'
+import { fetchAllProblems, fetchProgress } from '../lib/api'
 import { applyTheme, theme } from '../lib/theme'
 import type { ProblemListItem } from '../lib/types'
 
@@ -61,7 +61,7 @@ export const ProfileRoute = (): JSX.Element => {
   const [solved, setSolved] = createSignal<ReadonlySet<string>>(new Set())
   const [problems, setProblems] = createSignal<readonly ProblemListItem[]>([])
 
-  Effect.runPromise(fetchProblems())
+  Effect.runPromise(fetchAllProblems())
     .then(setProblems)
     .catch(() => setProblems([]))
 

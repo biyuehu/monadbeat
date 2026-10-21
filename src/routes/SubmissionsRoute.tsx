@@ -1,7 +1,8 @@
 import { A, useNavigate } from '@solidjs/router'
 import { Effect, flow } from 'effect'
-import { createSignal, For, type JSX, Show } from 'solid-js'
+import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
 import { FooterLine, Frame } from '../components/Frame'
+import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { fetchSubmissions } from '../lib/api'
 import type { SubmissionListItem } from '../lib/types'
@@ -25,20 +26,34 @@ export const SubmissionsRoute = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
   const [items, setItems] = createSignal<readonly SubmissionListItem[]>([])
+  const [total, setTotal] = createSignal(0)
+  const [page, setPage] = createSignal(1)
+  const pageSize = 15
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [filter, setFilter] = createSignal<Filter>('all')
   const [openId, setOpenId] = createSignal<number | null>(null)
 
-  const token = auth.token
-  if (token === null) {
-    setLoading(false)
-  } else {
-    Effect.runPromise(fetchSubmissions(token))
-      .then(setItems)
+  const loadPage = (p: number): void => {
+    const token = auth.token
+    if (token === null) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    Effect.runPromise(fetchSubmissions(token, p, pageSize))
+      .then((res) => {
+        setItems(res.items)
+        setTotal(res.total)
+        setPage(res.page)
+      })
       .catch(flow(String, setError))
       .finally(() => setLoading(false))
   }
+
+  createEffect(() => {
+    loadPage(page())
+  })
 
   const visible = (): SubmissionListItem[] =>
     items().filter((i) => filter() === 'all' || (filter() === 'correct') === i.is_correct)
@@ -191,7 +206,11 @@ export const SubmissionsRoute = (): JSX.Element => {
         </Show>
       </div>
 
-      <FooterLine class="!mt-4" right={`${visible().length} / ${items().length} submissions`} />
+      <Show when={total() > 0}>
+        <Pagination page={page()} pageSize={pageSize} total={total()} onPageChange={(p) => setPage(p)} />
+      </Show>
+
+      <FooterLine class="!mt-4" right={`${items().length} on page · ${total()} total submissions`} />
     </Frame>
   )
 }

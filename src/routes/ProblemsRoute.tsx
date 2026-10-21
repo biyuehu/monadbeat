@@ -3,9 +3,10 @@ import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { FilterPanel } from '../components/FilterPanel'
 import { FooterLine, Frame } from '../components/Frame'
+import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
-import { fetchProblems, fetchProgress } from '../lib/api'
+import { fetchAllProblems, fetchProgress } from '../lib/api'
 import {
   isProblemType,
   type ProblemListItem,
@@ -39,8 +40,10 @@ export const ProblemsRoute = (): JSX.Element => {
   const [error, setError] = createSignal<string | null>(null)
   const [filterOpen, setFilterOpen] = createSignal(false)
   const [search, setSearch] = createSignal('')
+  const [page, setPage] = createSignal(1)
+  const pageSize = 15
 
-  Effect.runPromise(fetchProblems())
+  Effect.runPromise(fetchAllProblems())
     .then(setProblems)
     .catch(flow(String, setError))
     .finally(() => setLoading(false))
@@ -62,6 +65,12 @@ export const ProblemsRoute = (): JSX.Element => {
     problems()
       .filter((p) => isProblemType(p.problem_type) && filter[p.problem_type])
       .filter((p) => p.title.toLowerCase().includes(search().toLowerCase()))
+
+  const pagedItems = (): ProblemListItem[] => {
+    const all = visible()
+    const start = (page() - 1) * pageSize
+    return all.slice(start, start + pageSize)
+  }
 
   const countText = (): string => {
     if (loading()) return 'Loading...'
@@ -151,7 +160,7 @@ export const ProblemsRoute = (): JSX.Element => {
                 </div>
               }
             >
-              <For each={visible()}>
+              <For each={pagedItems()}>
                 {(problem) => {
                   const st = (): { status: Status; attempts: number } => statusOf(problem.slug)
                   return (
@@ -191,6 +200,10 @@ export const ProblemsRoute = (): JSX.Element => {
           </Show>
         </Show>
       </div>
+
+      <Show when={visible().length > 0}>
+        <Pagination page={page()} pageSize={pageSize} total={visible().length} onPageChange={(p) => setPage(p)} />
+      </Show>
 
       <FooterLine class="!mt-4" right={`${ProblemTypeOrder.length} types · Haskell Practice`} />
 

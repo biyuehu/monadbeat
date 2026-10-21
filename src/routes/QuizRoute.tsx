@@ -3,7 +3,7 @@ import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
-import { fetchProblemDetail, fetchProblems, submitAnswer } from '../lib/api'
+import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../lib/api'
 import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../lib/types'
 
 type Feedback = { kind: 'ok' | 'error' | 'info'; text: string }
@@ -99,7 +99,7 @@ export const QuizRoute = (): JSX.Element => {
       .catch(flow(String, errorFeedback, setFeedback))
   }
 
-  Effect.runPromise(fetchProblems())
+  Effect.runPromise(fetchAllProblems())
     .then(setList)
     .catch(() => setList([]))
 

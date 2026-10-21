@@ -186,110 +186,115 @@ export const ProblemFormModal = (props: Props): JSX.Element => {
   )
 
   return (
-    <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 py-8 px-4">
-      <div class="terminal p-6 flex flex-col gap-5 w-full max-w-2xl">
-        <div class="flex items-center justify-between">
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/75 backdrop-blur-xs">
+      <div class="terminal max-h-[90vh] flex flex-col w-full max-w-2xl border border-line shadow-2xl overflow-hidden rounded-md">
+        {/* Modal Header */}
+        <div class="flex items-center justify-between px-5 py-3.5 border-b border-sep bg-panel shrink-0">
           <span class="font-bold text-soft">{isEdit() ? `Edit: ${props.slug}` : 'New Problem'}</span>
-          <button type="button" class="text-dim hover:text-soft text-lg leading-none" onClick={props.onClose}>
+          <button type="button" class="text-dim hover:text-soft text-lg leading-none p-1" onClick={props.onClose}>
             ✕
           </button>
         </div>
 
-        <Show when={err()}>
-          <div class="text-xs text-red-400 bg-red-900/20 border border-red-800 rounded px-3 py-2">{err()}</div>
-        </Show>
-
-        <div class="flex flex-col gap-4">
-          <Show when={!isEdit()}>
-            <Field label="Slug" required>
-              <input
-                class="input-field font-mono text-xs"
-                value={f().slug}
-                placeholder="my-problem-slug"
-                onInput={(e) => set('slug', e.currentTarget.value)}
-              />
-            </Field>
+        {/* Modal Body (Scrollable) */}
+        <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+          <Show when={err()}>
+            <div class="text-xs text-red-400 bg-red-900/20 border border-red-800 rounded px-3 py-2">{err()}</div>
           </Show>
 
-          <Field label="Title" required>
-            <input class="input-field" value={f().title} onInput={(e) => set('title', e.currentTarget.value)} />
-          </Field>
+          <div class="flex flex-col gap-3.5">
+            <Show when={!isEdit()}>
+              <Field label="Slug" required>
+                <input
+                  class="input-field font-mono text-xs"
+                  value={f().slug}
+                  placeholder="my-problem-slug"
+                  onInput={(e) => set('slug', e.currentTarget.value)}
+                />
+              </Field>
+            </Show>
 
-          <div class="grid grid-cols-2 gap-4">
-            <Field label="Difficulty (1–5)" required>
+            <Field label="Title" required>
+              <input class="input-field" value={f().title} onInput={(e) => set('title', e.currentTarget.value)} />
+            </Field>
+
+            <div class="grid grid-cols-2 gap-3">
+              <Field label="Difficulty (1–5)" required>
+                <input
+                  class="input-field"
+                  type="number"
+                  min={1}
+                  max={5}
+                  value={f().difficulty}
+                  onInput={(e) => set('difficulty', Number(e.currentTarget.value))}
+                />
+              </Field>
+              <Field label="Problem Type" required>
+                <select
+                  class="input-field"
+                  value={f().problem_type}
+                  onChange={(e) => set('problem_type', e.currentTarget.value as ProblemType)}
+                >
+                  {PROBLEM_TYPES.map((t) => (
+                    <option value={t}>{t}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            <Field label="Category (comma-separated)">
               <input
                 class="input-field"
-                type="number"
-                min={1}
-                max={5}
-                value={f().difficulty}
-                onInput={(e) => set('difficulty', Number(e.currentTarget.value))}
+                value={f().category}
+                placeholder="haskell, types"
+                onInput={(e) => set('category', e.currentTarget.value)}
               />
             </Field>
-            <Field label="Problem Type" required>
-              <select
-                class="input-field"
-                value={f().problem_type}
-                onChange={(e) => set('problem_type', e.currentTarget.value as ProblemType)}
-              >
-                {PROBLEM_TYPES.map((t) => (
-                  <option value={t}>{t}</option>
-                ))}
-              </select>
-            </Field>
+
+            <Field label="Remark">{textarea(f().remark, (v) => set('remark', v), 'Optional hint or note…', 2)}</Field>
+
+            {/* Type-specific fields */}
+            <Show when={f().problem_type === 'infer_type' || f().problem_type === 'find_function'}>
+              <Field label="Scaffold (Haskell, fed to GHC)" required>
+                {textarea(f().scaffold, (v) => set('scaffold', v), '-- Haskell code…', 5)}
+              </Field>
+              <Field label="Display Snippet (shown to user)" required>
+                {textarea(f().display_snippet, (v) => set('display_snippet', v), '-- Displayed code…', 5)}
+              </Field>
+            </Show>
+
+            <Show when={f().problem_type === 'predict_behavior'}>
+              <Field label="Display Code (shown to user)" required>
+                {textarea(f().display_code, (v) => set('display_code', v), '-- Code to evaluate…', 5)}
+              </Field>
+              <Field label="Options (one per line)" required>
+                {textarea(f().options, (v) => set('options', v), 'Option A\nOption B\n…', 3)}
+              </Field>
+              <Field label="Correct Option Index (0-based)" required>
+                <input
+                  class="input-field w-24"
+                  type="number"
+                  min={0}
+                  value={f().correct_index}
+                  onInput={(e) => set('correct_index', Number(e.currentTarget.value))}
+                />
+              </Field>
+            </Show>
+
+            <label class="flex items-center gap-2 text-xs text-soft cursor-pointer select-none mt-1">
+              <input
+                type="checkbox"
+                class="accent-accent"
+                checked={f().is_published}
+                onChange={(e) => set('is_published', e.currentTarget.checked)}
+              />
+              Published (visible to users)
+            </label>
           </div>
-
-          <Field label="Category (comma-separated)">
-            <input
-              class="input-field"
-              value={f().category}
-              placeholder="haskell, types"
-              onInput={(e) => set('category', e.currentTarget.value)}
-            />
-          </Field>
-
-          <Field label="Remark">{textarea(f().remark, (v) => set('remark', v), 'Optional hint or note…', 2)}</Field>
-
-          {/* Type-specific fields */}
-          <Show when={f().problem_type === 'infer_type' || f().problem_type === 'find_function'}>
-            <Field label="Scaffold (Haskell, fed to GHC)" required>
-              {textarea(f().scaffold, (v) => set('scaffold', v), '-- Haskell code…', 6)}
-            </Field>
-            <Field label="Display Snippet (shown to user)" required>
-              {textarea(f().display_snippet, (v) => set('display_snippet', v), '-- Displayed code…', 6)}
-            </Field>
-          </Show>
-
-          <Show when={f().problem_type === 'predict_behavior'}>
-            <Field label="Display Code (shown to user)" required>
-              {textarea(f().display_code, (v) => set('display_code', v), '-- Code to evaluate…', 6)}
-            </Field>
-            <Field label="Options (one per line)" required>
-              {textarea(f().options, (v) => set('options', v), 'Option A\nOption B\n…', 4)}
-            </Field>
-            <Field label="Correct Option Index (0-based)" required>
-              <input
-                class="input-field w-24"
-                type="number"
-                min={0}
-                value={f().correct_index}
-                onInput={(e) => set('correct_index', Number(e.currentTarget.value))}
-              />
-            </Field>
-          </Show>
-
-          <label class="flex items-center gap-2 text-sm text-soft cursor-pointer select-none">
-            <input
-              type="checkbox"
-              class="accent-accent"
-              checked={f().is_published}
-              onChange={(e) => set('is_published', e.currentTarget.checked)}
-            />
-            Published (visible to users)
-          </label>
         </div>
 
-        <div class="flex gap-2 justify-end">
+        {/* Modal Footer */}
+        <div class="flex gap-2 justify-end px-5 py-3 border-t border-sep bg-panel shrink-0">
           <button type="button" class="btn-sm btn-muted" onClick={props.onClose}>
             Cancel
           </button>

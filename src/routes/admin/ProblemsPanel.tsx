@@ -1,5 +1,6 @@
 import { Effect } from 'effect'
 import { createResource, createSignal, For, type JSX, Match, Show, Suspense, Switch } from 'solid-js'
+import { Pagination } from '../../components/Pagination'
 import { adminDeleteProblem, adminListProblems, adminPublishToggle, type ProblemAdminItem } from '../../lib/adminApi'
 import { ProblemTypeLabel } from '../../lib/types'
 import { ProblemFormModal } from './ProblemFormModal'
@@ -9,10 +10,18 @@ const stars = (n: number): string => '★'.repeat(n) + '☆'.repeat(5 - n)
 export const ProblemsPanel = (props: { token: string }): JSX.Element => {
   const [problems, { refetch }] = createResource(() => Effect.runPromise(adminListProblems(props.token)))
 
+  const [page, setPage] = createSignal(1)
+  const pageSize = 12
   const [editing, setEditing] = createSignal<ProblemAdminItem | null>(null)
   const [creating, setCreating] = createSignal(false)
   const [busy, setBusy] = createSignal<string | null>(null)
   const [err, setErr] = createSignal<string | null>(null)
+
+  const pagedProblems = (): ProblemAdminItem[] => {
+    const list = problems() ?? []
+    const start = (page() - 1) * pageSize
+    return list.slice(start, start + pageSize)
+  }
 
   const withBusy = async (key: string, fn: () => Promise<unknown>): Promise<void> => {
     setBusy(key)
@@ -68,7 +77,7 @@ export const ProblemsPanel = (props: { token: string }): JSX.Element => {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={problems()}>
+                  <For each={pagedProblems()}>
                     {(p) => (
                       <tr class={p.is_published ? '' : 'opacity-50'}>
                         <td class="font-mono text-xs text-dim">{p.slug}</td>
@@ -108,6 +117,15 @@ export const ProblemsPanel = (props: { token: string }): JSX.Element => {
                 </tbody>
               </table>
             </div>
+
+            <Show when={(problems() ?? []).length > 0}>
+              <Pagination
+                page={page()}
+                pageSize={pageSize}
+                total={(problems() ?? []).length}
+                onPageChange={(p) => setPage(p)}
+              />
+            </Show>
           </Match>
         </Switch>
       </Suspense>

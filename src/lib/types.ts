@@ -15,6 +15,8 @@ export type LeaderboardResponse = components['schemas']['LeaderboardResponse']
 export type SubmitRequest = components['schemas']['SubmitRequest']
 export type SubmissionResponse = components['schemas']['SubmissionResponse']
 export type SubmissionListItem = components['schemas']['SubmissionListItem']
+export type SubmissionListResponse = components['schemas']['PaginatedResponse_SubmissionListItem_']
+export type ProblemListResponse = components['schemas']['PaginatedResponse_ProblemListItem_']
 export type ProgressItem = components['schemas']['ProgressItem']
 
 export const ProblemTypeOrder = ['infer_type', 'find_function', 'predict_behavior'] as const

@@ -29,7 +29,7 @@ export const Headbar = (): JSX.Element => {
 
   return (
     <header
-      class="relative z-90 flex shrink-0 items-center justify-between gap-1.5 px-3 py-2 md:px-4 md:py-2.5 lg:px-7 lg:py-3.5 max-[480px]:flex-col bg-head border-b border-sep shadow-[0_6px_24px_var(--shadow)] transition-colors"
+      class="relative z-40 flex shrink-0 items-center justify-between gap-1.5 px-3 py-2 md:px-4 md:py-2.5 lg:px-7 lg:py-3.5 max-[480px]:flex-col bg-head border-b border-sep shadow-[0_6px_24px_var(--shadow)] transition-colors"
       id="headbar"
     >
       <A href="/" class="flex shrink-0 items-baseline gap-2.5 no-underline" aria-label="Home">

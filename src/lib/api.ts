@@ -4,8 +4,9 @@ import type {
   MeResponse,
   ProblemDetail,
   ProblemListItem,
+  ProblemListResponse,
   ProgressItem,
-  SubmissionListItem,
+  SubmissionListResponse,
   SubmissionResponse
 } from './types'
 
@@ -71,8 +72,11 @@ const authInit = (token: string, init?: RequestInit): RequestInit => ({
   headers: { ...init?.headers, Authorization: `Bearer ${token}` }
 })
 
-export const fetchProblems = (): Effect.Effect<readonly ProblemListItem[], ApiError | Error> =>
-  fetchJson<{ items: ProblemListItem[] }>('/problems/').pipe(Effect.map((r) => r.items))
+export const fetchProblems = (page = 1, pageSize = 20): Effect.Effect<ProblemListResponse, ApiError | Error> =>
+  fetchJson<ProblemListResponse>(`/problems/?page=${page}&page_size=${pageSize}`)
+
+export const fetchAllProblems = (): Effect.Effect<readonly ProblemListItem[], ApiError | Error> =>
+  fetchJson<ProblemListResponse>('/problems/?page=1&page_size=1000').pipe(Effect.map((r) => r.items))
 
 export const fetchProblemDetail = (slug: string): Effect.Effect<ProblemDetail, ApiError | Error> =>
   fetchJson<ProblemDetail>(`/problems/${encodeURIComponent(slug)}`)
@@ -85,11 +89,10 @@ export const fetchMe = (token: string): Effect.Effect<MeResponse, ApiError | Err
 
 export const fetchSubmissions = (
   token: string,
-  pageSize = 100
-): Effect.Effect<readonly SubmissionListItem[], ApiError | Error> =>
-  fetchJson<{ items: SubmissionListItem[] }>(`/submissions/?page_size=${pageSize}`, authInit(token)).pipe(
-    Effect.map((r) => r.items)
-  )
+  page = 1,
+  pageSize = 20
+): Effect.Effect<SubmissionListResponse, ApiError | Error> =>
+  fetchJson<SubmissionListResponse>(`/submissions/?page=${page}&page_size=${pageSize}`, authInit(token))
 
 export const fetchProgress = (token: string): Effect.Effect<readonly ProgressItem[], ApiError | Error> =>
   fetchJson<{ items: ProgressItem[] }>('/submissions/progress', authInit(token)).pipe(Effect.map((r) => r.items))

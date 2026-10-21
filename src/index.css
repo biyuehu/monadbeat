@@ -111,7 +111,22 @@ body {
   flex-direction: column;
   height: 100dvh;
   overflow: hidden;
-  background: #000;
+  background-color: #07060a;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 191, 0.18), transparent),
+    radial-gradient(circle at 100% 100%, rgba(90, 65, 160, 0.08), transparent 40%),
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    36px 36px,
+    36px 36px;
+  background-position:
+    0 0,
+    0 0,
+    -1px -1px,
+    -1px -1px;
   color: var(--fg);
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
   transition:
@@ -120,7 +135,22 @@ body {
 }
 
 body.theme-light {
-  background: #f2f0f7;
+  background-color: #f4f2f8;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 191, 0.1), transparent),
+    radial-gradient(circle at 100% 100%, rgba(90, 65, 160, 0.05), transparent 40%),
+    linear-gradient(rgba(124, 92, 191, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 92, 191, 0.035) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    36px 36px,
+    36px 36px;
+  background-position:
+    0 0,
+    0 0,
+    -1px -1px,
+    -1px -1px;
 }
 
 * {
