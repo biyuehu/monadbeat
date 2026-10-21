@@ -1,6 +1,8 @@
 import { Effect } from 'effect'
 import { createResource, createSignal, For, type JSX, Match, Show, Suspense, Switch } from 'solid-js'
+import { Pagination } from '../../components/Pagination'
 import { useAuth } from '../../context/auth'
+import { useDialog } from '../../context/dialog'
 import {
   adminBanUser,
   adminDemote,
@@ -28,16 +30,26 @@ const RoleBadge = (props: { role: string }): JSX.Element => {
 
 export const UsersPanel = (props: { token: string }): JSX.Element => {
   const { state } = useAuth()
+  const dialog = useDialog()
   const isSuperadmin = (): boolean => state.user?.role === 'superadmin'
 
   const [users, { refetch: refetchUsers }] = createResource(() => Effect.runPromise(adminListUsers(props.token)))
   const [bans, { refetch: refetchBans }] = createResource(() => Effect.runPromise(adminListBans(props.token)))
+
+  const [page, setPage] = createSignal(1)
+  const pageSize = 12
 
   const [busy, setBusy] = createSignal<string | null>(null)
   const [err, setErr] = createSignal<string | null>(null)
   const [banTarget, setBanTarget] = createSignal<string | null>(null)
   const [banReason, setBanReason] = createSignal('')
   const [banExpiry, setBanExpiry] = createSignal('')
+
+  const pagedUsers = (): UserAdminItem[] => {
+    const list = users() ?? []
+    const start = (page() - 1) * pageSize
+    return list.slice(start, start + pageSize)
+  }
 
   const withBusy = async (key: string, fn: () => Promise<unknown>): Promise<void> => {
     setBusy(key)
@@ -53,12 +65,31 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
     }
   }
 
-  const promote = (u: UserAdminItem): void =>
-    void withBusy(u.username, () => Effect.runPromise(adminPromote(u.username, props.token)))
+  const promote = async (u: UserAdminItem): Promise<void> => {
+    const ok = await dialog.confirm({
+      title: 'Promote User',
+      message: `Promote "${u.username}" to admin?`,
+      confirmText: 'Promote'
+    })
+    if (!ok) return
+    void withBusy(u.username, async () => {
+      await Effect.runPromise(adminPromote(u.username, props.token))
+      dialog.toast(`Promoted ${u.username} to admin`, 'success')
+    })
+  }
 
-  const demote = (u: UserAdminItem): void => {
-    if (!confirm(`Demote ${u.username} from admin?`)) return
-    void withBusy(u.username, () => Effect.runPromise(adminDemote(u.username, props.token)))
+  const demote = async (u: UserAdminItem): Promise<void> => {
+    const ok = await dialog.confirm({
+      title: 'Demote User',
+      message: `Demote "${u.username}" from admin to normal user?`,
+      confirmText: 'Demote',
+      danger: true
+    })
+    if (!ok) return
+    void withBusy(u.username, async () => {
+      await Effect.runPromise(adminDemote(u.username, props.token))
+      dialog.toast(`Demoted ${u.username} to user`, 'info')
+    })
   }
 
   const openBan = (u: UserAdminItem): void => {
@@ -77,12 +108,21 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
     void withBusy(target, async () => {
       await Effect.runPromise(adminBanUser(target, body, props.token))
       setBanTarget(null)
+      dialog.toast(`User ${target} has been banned`, 'warning')
     })
   }
 
-  const liftBan = (ban: BanItem): void => {
-    if (!confirm(`Lift ban on ${ban.username}?`)) return
-    void withBusy(`ban-${ban.id}`, () => Effect.runPromise(adminLiftBan(ban.id, props.token)))
+  const liftBan = async (ban: BanItem): Promise<void> => {
+    const ok = await dialog.confirm({
+      title: 'Lift Ban',
+      message: `Lift ban on "${ban.username}"?`,
+      confirmText: 'Lift Ban'
+    })
+    if (!ok) return
+    void withBusy(`ban-${ban.id}`, async () => {
+      await Effect.runPromise(adminLiftBan(ban.id, props.token))
+      dialog.toast(`Lifted ban on ${ban.username}`, 'success')
+    })
   }
 
   return (
@@ -111,7 +151,7 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
                     </tr>
                   </thead>
                   <tbody>
-                    <For each={users()}>
+                    <For each={pagedUsers()}>
                       {(u) => (
                         <tr>
                           <td class="flex items-center gap-2">
@@ -162,6 +202,15 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
                   </tbody>
                 </table>
               </div>
+
+              <Show when={(users() ?? []).length > 0}>
+                <Pagination
+                  page={page()}
+                  pageSize={pageSize}
+                  total={(users() ?? []).length}
+                  onPageChange={(p) => setPage(p)}
+                />
+              </Show>
             </Match>
           </Switch>
         </Suspense>

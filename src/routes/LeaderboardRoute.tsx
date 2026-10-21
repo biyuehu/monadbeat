@@ -1,6 +1,7 @@
 import { Effect, flow } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { FooterLine, Frame } from '../components/Frame'
+import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { fetchLeaderboard } from '../lib/api'
 import type { LeaderboardItem } from '../lib/types'
@@ -17,11 +18,19 @@ export const LeaderboardRoute = (): JSX.Element => {
   const [entries, setEntries] = createSignal<readonly LeaderboardItem[]>([])
   const [error, setError] = createSignal<string | null>(null)
   const [loading, setLoading] = createSignal(true)
+  const [page, setPage] = createSignal(1)
+  const pageSize = 20
 
   Effect.runPromise(fetchLeaderboard())
     .then(setEntries)
     .catch(flow(String, setError))
     .finally(() => setLoading(false))
+
+  const pagedEntries = (): LeaderboardItem[] => {
+    const list = entries()
+    const start = (page() - 1) * pageSize
+    return list.slice(start, start + pageSize)
+  }
 
   const isMe = (entry: LeaderboardItem): boolean => auth.user !== null && auth.user.username === entry.username
 
@@ -52,7 +61,7 @@ export const LeaderboardRoute = (): JSX.Element => {
               </Show>
             }
           >
-            <For each={entries()}>
+            <For each={pagedEntries()}>
               {(entry) => (
                 <div
                   class={`group list-row gap-2 md:gap-3 px-3 py-2.5 md:px-3.5 hover:bg-hl hover:border-l-hl-line ${
@@ -82,6 +91,12 @@ export const LeaderboardRoute = (): JSX.Element => {
           </Show>
         </Show>
       </div>
+
+      <Show when={entries().length > 0}>
+        <div class="w-full max-w-200 mx-auto">
+          <Pagination page={page()} pageSize={pageSize} total={entries().length} onPageChange={(p) => setPage(p)} />
+        </div>
+      </Show>
 
       <FooterLine class="!mt-4" right={`Total ${entries().length} players`} />
     </Frame>

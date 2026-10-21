@@ -1,6 +1,7 @@
 import { Effect } from 'effect'
 import { createResource, createSignal, For, type JSX, Match, Show, Suspense, Switch } from 'solid-js'
 import { Pagination } from '../../components/Pagination'
+import { useDialog } from '../../context/dialog'
 import { adminDeleteProblem, adminListProblems, adminPublishToggle, type ProblemAdminItem } from '../../lib/adminApi'
 import { ProblemTypeLabel } from '../../lib/types'
 import { ProblemFormModal } from './ProblemFormModal'
@@ -8,6 +9,7 @@ import { ProblemFormModal } from './ProblemFormModal'
 const stars = (n: number): string => '★'.repeat(n) + '☆'.repeat(5 - n)
 
 export const ProblemsPanel = (props: { token: string }): JSX.Element => {
+  const dialog = useDialog()
   const [problems, { refetch }] = createResource(() => Effect.runPromise(adminListProblems(props.token)))
 
   const [page, setPage] = createSignal(1)
@@ -40,9 +42,18 @@ export const ProblemsPanel = (props: { token: string }): JSX.Element => {
     void withBusy(p.slug, () => Effect.runPromise(adminPublishToggle(p.slug, !p.is_published, props.token)))
   }
 
-  const deleteProblem = (p: ProblemAdminItem): void => {
-    if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return
-    void withBusy(p.slug, () => Effect.runPromise(adminDeleteProblem(p.slug, props.token)))
+  const deleteProblem = async (p: ProblemAdminItem): Promise<void> => {
+    const ok = await dialog.confirm({
+      title: 'Delete Problem',
+      message: `Are you sure you want to delete "${p.title}" (${p.slug})?\nThis action cannot be undone.`,
+      confirmText: 'Delete',
+      danger: true
+    })
+    if (!ok) return
+    void withBusy(p.slug, async () => {
+      await Effect.runPromise(adminDeleteProblem(p.slug, props.token))
+      dialog.toast(`Problem "${p.title}" deleted`, 'success')
+    })
   }
 
   return (

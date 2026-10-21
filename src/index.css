@@ -111,18 +111,21 @@ body {
   flex-direction: column;
   height: 100dvh;
   overflow: hidden;
-  background-color: #07060a;
+  background-color: #08070d;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 191, 0.18), transparent),
-    radial-gradient(circle at 100% 100%, rgba(90, 65, 160, 0.08), transparent 40%),
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    radial-gradient(ellipse 90% 60% at 50% -15%, rgba(138, 92, 224, 0.28), transparent),
+    radial-gradient(circle at 100% 100%, rgba(124, 77, 219, 0.16), transparent 50%),
+    radial-gradient(circle at 0% 90%, rgba(90, 65, 160, 0.14), transparent 45%),
+    linear-gradient(rgba(255, 255, 255, 0.038) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.038) 1px, transparent 1px);
   background-size:
     100% 100%,
     100% 100%,
-    36px 36px,
-    36px 36px;
+    100% 100%,
+    32px 32px,
+    32px 32px;
   background-position:
+    0 0,
     0 0,
     0 0,
     -1px -1px,
@@ -135,18 +138,21 @@ body {
 }
 
 body.theme-light {
-  background-color: #f4f2f8;
+  background-color: #edeaf5;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(124, 92, 191, 0.1), transparent),
-    radial-gradient(circle at 100% 100%, rgba(90, 65, 160, 0.05), transparent 40%),
-    linear-gradient(rgba(124, 92, 191, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 92, 191, 0.035) 1px, transparent 1px);
+    radial-gradient(ellipse 90% 60% at 50% -15%, rgba(124, 92, 191, 0.18), transparent),
+    radial-gradient(circle at 100% 100%, rgba(90, 65, 160, 0.12), transparent 50%),
+    radial-gradient(circle at 0% 90%, rgba(138, 92, 224, 0.1), transparent 45%),
+    linear-gradient(rgba(100, 70, 160, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 70, 160, 0.08) 1px, transparent 1px);
   background-size:
     100% 100%,
     100% 100%,
-    36px 36px,
-    36px 36px;
+    100% 100%,
+    32px 32px,
+    32px 32px;
   background-position:
+    0 0,
     0 0,
     0 0,
     -1px -1px,
