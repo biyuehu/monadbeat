@@ -35,6 +35,11 @@ def list_submissions(
     .where(Submission.user_id == user.id)
     .order_by(col(Submission.submitted_at).desc())
   )
+
+  # For non-admin users, silently hide submissions for unpublished/draft problems
+  if not user.is_admin:
+    base_query = base_query.where(Problem.is_published == True)
+
   if problem_slug is not None:
     base_query = base_query.where(Problem.slug == problem_slug)
 
@@ -67,7 +72,7 @@ def list_progress(
   user: User = Depends(get_current_user),
   session: Session = Depends(get_session),
 ) -> ProgressResponse:
-  sub_ranked = (
+  sub_ranked_query = (
     select(
       col(Submission.problem_id),
       col(Submission.is_correct),
@@ -78,16 +83,22 @@ def list_progress(
       )
       .label("rn"),
     )
+    .join(Problem, col(Submission.problem_id) == col(Problem.id))
     .where(col(Submission.user_id) == user.id)
-    .subquery()
   )
+
+  # Non-admin users only see progress on published problems
+  if not user.is_admin:
+    sub_ranked_query = sub_ranked_query.where(col(Problem.is_published) == True)
+
+  sub_ranked = sub_ranked_query.subquery()
 
   first_attempts = session.exec(
     select(sub_ranked.c.problem_id, sub_ranked.c.is_correct).where(sub_ranked.c.rn == 1)
   ).all()
   first_correct_map = {prob_id: bool(correct) for prob_id, correct in first_attempts}
 
-  rows = session.exec(
+  rows_query = (
     select(
       col(Problem.id),
       col(Problem.slug),
@@ -97,8 +108,12 @@ def list_progress(
     .select_from(Submission)
     .join(Problem)
     .where(col(Submission.user_id) == user.id)
-    .group_by(col(Problem.id), col(Problem.slug))
-  ).all()
+  )
+
+  if not user.is_admin:
+    rows_query = rows_query.where(col(Problem.is_published) == True)
+
+  rows = session.exec(rows_query.group_by(col(Problem.id), col(Problem.slug))).all()
 
   return ProgressResponse(
     items=[
@@ -121,11 +136,11 @@ def submit(
   user: User = Depends(require_not_banned),
   session: Session = Depends(get_session),
 ) -> SubmissionResponse:
-  problem = session.exec(
-    select(Problem).where(
-      Problem.slug == body.problem_slug, Problem.is_published == True
-    )
-  ).first()
+  problem_query = select(Problem).where(Problem.slug == body.problem_slug)
+  if not user.is_admin:
+    problem_query = problem_query.where(Problem.is_published == True)
+
+  problem = session.exec(problem_query).first()
   if problem is None or problem.id is None:
     raise HTTPException(status_code=404, detail="Problem not found")
 

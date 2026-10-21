@@ -4,6 +4,7 @@ import { Headbar } from './components/Headbar'
 import { AuthCallback } from './pages/AuthCallback'
 import { Admin } from './pages/admin/Admin'
 import { Leaderboard } from './pages/Leaderboard'
+import { NotFound } from './pages/NotFound'
 import { Problems } from './pages/Problems'
 import { Profile } from './pages/Profile'
 import { Quiz } from './pages/Quiz'
@@ -25,5 +26,6 @@ export const App = (): JSX.Element => (
     <Route path="/submissions" component={Submissions} />
     <Route path="/profile" component={Profile} />
     <Route path="/admin" component={Admin} />
+    <Route path="*404" component={NotFound} />
   </Router>
 )

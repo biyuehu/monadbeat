@@ -94,8 +94,13 @@ export const fetchProblems = (
 export const fetchAllProblems = (): Effect.Effect<readonly ProblemListItem[], ApiError | Error> =>
   fetchJson<ProblemListResponse>('/problems/?page=1&page_size=1000').pipe(Effect.map((r) => r.items))
 
-export const fetchProblemDetail = (slug: string): Effect.Effect<ProblemDetail, ApiError | Error> =>
-  fetchJson<ProblemDetail>(`/problems/${encodeURIComponent(slug)}`)
+export const fetchProblemDetail = (
+  slug: string,
+  token?: string | null
+): Effect.Effect<ProblemDetail, ApiError | Error> => {
+  const init = token ? authInit(token) : undefined
+  return fetchJson<ProblemDetail>(`/problems/${encodeURIComponent(slug)}`, init)
+}
 
 export const fetchLeaderboard = (): Effect.Effect<readonly LeaderboardItem[], ApiError | Error> =>
   fetchJson<{ items: LeaderboardItem[] }>('/leaderboard/').pipe(Effect.map((r) => r.items))

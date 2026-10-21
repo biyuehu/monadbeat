@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any, cast
 
 from sqlalchemy import case, func, select
 from sqlmodel import Session
 
+from app.models.ban import Ban
 from app.models.problem import Problem
 from app.models.submission import Submission
 from app.models.user import User
@@ -24,18 +26,25 @@ def _col(attr: Any) -> Any:
 
 
 def compute_leaderboard(session: Session, limit: int) -> list[LeaderboardEntry]:
-  # Step 1: Chronologically rank all submissions for each (user, problem) pair.
-  sub_ranked = select(
-    _col(Submission.user_id).label("user_id"),
-    _col(Submission.problem_id).label("problem_id"),
-    _col(Submission.is_correct).label("is_correct"),
-    func.row_number()
-    .over(
-      partition_by=(_col(Submission.user_id), _col(Submission.problem_id)),
-      order_by=_col(Submission.submitted_at).asc(),
+  now = datetime.now(UTC).replace(tzinfo=None)
+
+  # Step 1: Chronologically rank all submissions for published problems.
+  sub_ranked = (
+    select(
+      _col(Submission.user_id).label("user_id"),
+      _col(Submission.problem_id).label("problem_id"),
+      _col(Submission.is_correct).label("is_correct"),
+      func.row_number()
+      .over(
+        partition_by=(_col(Submission.user_id), _col(Submission.problem_id)),
+        order_by=_col(Submission.submitted_at).asc(),
+      )
+      .label("attempt_number"),
     )
-    .label("attempt_number"),
-  ).subquery()
+    .join(Problem, _col(Submission.problem_id) == _col(Problem.id))
+    .where(_col(Problem.is_published) == True)
+    .subquery()
+  )
 
   # Step 2: Find the attempt count at which the user first correctly solved the problem.
   first_solve = (
@@ -59,15 +68,13 @@ def compute_leaderboard(session: Session, limit: int) -> list[LeaderboardEntry]:
       _col(Problem.problem_type).label("problem_type"),
     )
     .join(Problem, first_solve.c.problem_id == _col(Problem.id))
+    .where(_col(Problem.is_published) == True)
     .where(_col(Problem.difficulty).between(1, 5))
     .where(_col(Problem.problem_type).in_(list(PROBLEM_TYPE_MULTIPLIER.keys())))
     .subquery()
   )
 
-  # Attempt multiplier:
-  # - 1st attempt: 1.5x
-  # - <= 3 attempts: 1.0x
-  # - > 3 attempts: 0.5x
+  # Multiplier: 1st try = 1.5, <= 3 tries = 1.0, > 3 tries = 0.5
   attempt_factor = case(
     (solved.c.attempts_to_solve <= 1, 1.5),
     (solved.c.attempts_to_solve <= 3, 1.0),
@@ -90,6 +97,14 @@ def compute_leaderboard(session: Session, limit: int) -> list[LeaderboardEntry]:
 
   total_score = func.sum(per_problem_score).label("score")
 
+  # Subquery of currently banned user IDs (not lifted, and not expired)
+  active_banned_user_ids = (
+    select(_col(Ban.user_id))
+    .where(_col(Ban.lifted_at).is_(None))
+    .where((_col(Ban.expires_at).is_(None)) | (_col(Ban.expires_at) > now))
+    .distinct()
+  )
+
   stmt = (
     select(
       solved.c.user_id,
@@ -99,6 +114,7 @@ def compute_leaderboard(session: Session, limit: int) -> list[LeaderboardEntry]:
       func.count().label("solved_count"),
     )
     .join(User, solved.c.user_id == _col(User.id))
+    .where(_col(User.id).not_in(active_banned_user_ids))
     .group_by(solved.c.user_id, _col(User.username), _col(User.avatar_url))
     .order_by(total_score.desc(), solved.c.user_id.asc())
     .limit(limit)

@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from '@solidjs/router'
-import { Effect, flow } from 'effect'
+import { Effect } from 'effect'
 import { createSignal, For, type JSX, Show } from 'solid-js'
 import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
@@ -7,8 +7,6 @@ import { useAuth } from '../context/auth'
 import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../types'
 
 type Feedback = { kind: 'ok' | 'error' | 'info'; text: string }
-
-const errorFeedback = (text: string): Feedback => ({ kind: 'error', text })
 
 const escapeHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -89,14 +87,25 @@ export const Quiz = (): JSX.Element => {
   const [feedback, setFeedback] = createSignal<Feedback | null>(null)
   const [submitting, setSubmitting] = createSignal(false)
 
+  const [loading, setLoading] = createSignal(true)
+  const [loadError, setLoadError] = createSignal<string | null>(null)
+
   const load = (slug: string): void => {
+    setLoading(true)
+    setLoadError(null)
     setProblem(null)
     setFeedback(null)
     setAnswer('')
     setSelected(-1)
-    Effect.runPromise(fetchProblemDetail(slug))
-      .then(setProblem)
-      .catch(flow(String, errorFeedback, setFeedback))
+    Effect.runPromise(fetchProblemDetail(slug, auth.token))
+      .then((p) => {
+        setProblem(p)
+      })
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : String(e)
+        setLoadError(msg)
+      })
+      .finally(() => setLoading(false))
   }
 
   Effect.runPromise(fetchAllProblems())
@@ -174,7 +183,18 @@ export const Quiz = (): JSX.Element => {
       when={problem() !== null}
       fallback={
         <Frame title="Quiz">
-          <div class="status-text text-dim">Loading...</div>
+          <Show when={!loading() && loadError()} fallback={<div class="status-text text-dim">Loading...</div>}>
+            <div class="flex flex-col items-center justify-center py-12 gap-4 text-center">
+              <div class="text-3xl">⚠️</div>
+              <div class="text-lg font-semibold text-soft">Problem Not Available</div>
+              <p class="text-xs text-dim max-w-md">
+                This problem does not exist, or has been unpublished by the administrator.
+              </p>
+              <button type="button" class="btn-sm btn-accent mt-2" onClick={() => navigate('/')}>
+                ← Back to Problems
+              </button>
+            </div>
+          </Show>
         </Frame>
       }
     >

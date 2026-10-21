@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, col, func, select
 
+from app.auth.dependencies import get_current_user_optional
 from app.db import get_session
 from app.dtos.problem import ProblemDetailResponse, ProblemListItem, ProblemListResponse
 from app.models.problem import Problem
+from app.models.user import User
 
 router = APIRouter(prefix="/problems", tags=["problems"])
 
@@ -53,11 +55,15 @@ def list_problems(
 
 @router.get("/{slug}")
 def get_problem(
-  slug: str, session: Session = Depends(get_session)
+  slug: str,
+  user: User | None = Depends(get_current_user_optional),
+  session: Session = Depends(get_session),
 ) -> ProblemDetailResponse:
-  problem = session.exec(
-    select(Problem).where(Problem.slug == slug, Problem.is_published == True)
-  ).first()
+  query = select(Problem).where(Problem.slug == slug)
+  if user is None or not user.is_admin:
+    query = query.where(Problem.is_published == True)
+
+  problem = session.exec(query).first()
   if problem is None:
     raise HTTPException(status_code=404, detail="Problem not found")
   return problem.to_detail_response()
