@@ -423,6 +423,17 @@ export interface components {
       /** Is Banned */
       is_banned: boolean
     }
+    /** PaginatedResponse[ProblemAdminItem] */
+    PaginatedResponse_ProblemAdminItem_: {
+      /** Items */
+      items: components['schemas']['ProblemAdminItem'][]
+      /** Total */
+      total: number
+      /** Page */
+      page: number
+      /** Page Size */
+      page_size: number
+    }
     /** PaginatedResponse[ProblemListItem] */
     PaginatedResponse_ProblemListItem_: {
       /** Items */
@@ -438,6 +449,17 @@ export interface components {
     PaginatedResponse_SubmissionListItem_: {
       /** Items */
       items: components['schemas']['SubmissionListItem'][]
+      /** Total */
+      total: number
+      /** Page */
+      page: number
+      /** Page Size */
+      page_size: number
+    }
+    /** PaginatedResponse[UserAdminItem] */
+    PaginatedResponse_UserAdminItem_: {
+      /** Items */
+      items: components['schemas']['UserAdminItem'][]
       /** Total */
       total: number
       /** Page */
@@ -809,6 +831,8 @@ export interface operations {
       query?: {
         page?: number
         page_size?: number
+        search?: string | null
+        problem_types?: string | null
       }
       header?: never
       path?: never
@@ -975,7 +999,10 @@ export interface operations {
   }
   list_all_problems_admin_problems_get: {
     parameters: {
-      query?: never
+      query?: {
+        page?: number
+        page_size?: number
+      }
       header?: never
       path?: never
       cookie?: never
@@ -988,7 +1015,16 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['ProblemAdminItem'][]
+          'application/json': components['schemas']['PaginatedResponse_ProblemAdminItem_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }
@@ -1125,7 +1161,10 @@ export interface operations {
   }
   list_users_admin_users_get: {
     parameters: {
-      query?: never
+      query?: {
+        page?: number
+        page_size?: number
+      }
       header?: never
       path?: never
       cookie?: never
@@ -1138,7 +1177,16 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['UserAdminItem'][]
+          'application/json': components['schemas']['PaginatedResponse_UserAdminItem_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
         }
       }
     }

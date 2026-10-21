@@ -34,15 +34,28 @@ export const Submissions = (): JSX.Element => {
   const [filter, setFilter] = createSignal<Filter>('all')
   const [openId, setOpenId] = createSignal<number | null>(null)
 
+  // Cache pages so navigating back does not re-fetch
+  const pageCache = new Map<number, { items: readonly SubmissionListItem[]; total: number }>()
+
   const loadPage = (p: number): void => {
     const token = auth.token
     if (token === null) {
       setLoading(false)
       return
     }
+
+    if (pageCache.has(p)) {
+      const cached = pageCache.get(p)!
+      setItems(cached.items)
+      setTotal(cached.total)
+      setPage(p)
+      return
+    }
+
     setLoading(true)
     Effect.runPromise(fetchSubmissions(token, p, pageSize))
       .then((res) => {
+        pageCache.set(p, { items: res.items, total: res.total })
         setItems(res.items)
         setTotal(res.total)
         setPage(res.page)

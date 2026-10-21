@@ -72,8 +72,24 @@ const authInit = (token: string, init?: RequestInit): RequestInit => ({
   headers: { ...init?.headers, Authorization: `Bearer ${token}` }
 })
 
-export const fetchProblems = (page = 1, pageSize = 20): Effect.Effect<ProblemListResponse, ApiError | Error> =>
-  fetchJson<ProblemListResponse>(`/problems/?page=${page}&page_size=${pageSize}`)
+export const fetchProblems = (
+  page = 1,
+  pageSize = 20,
+  search?: string,
+  types?: string[]
+): Effect.Effect<ProblemListResponse, ApiError | Error> => {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize)
+  })
+  if (search?.trim()) {
+    params.set('search', search.trim())
+  }
+  if (types && types.length > 0) {
+    params.set('problem_types', types.join(','))
+  }
+  return fetchJson<ProblemListResponse>(`/problems/?${params.toString()}`)
+}
 
 export const fetchAllProblems = (): Effect.Effect<readonly ProblemListItem[], ApiError | Error> =>
   fetchJson<ProblemListResponse>('/problems/?page=1&page_size=1000').pipe(Effect.map((r) => r.items))

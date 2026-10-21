@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.db import get_session
 from app.dtos.problem import ProblemDetailResponse, ProblemListItem, ProblemListResponse
@@ -12,14 +12,26 @@ router = APIRouter(prefix="/problems", tags=["problems"])
 def list_problems(
   page: int = 1,
   page_size: int = 20,
+  search: str | None = None,
+  problem_types: str | None = None,
   session: Session = Depends(get_session),
 ) -> ProblemListResponse:
   base_query = select(Problem).where(Problem.is_published == True)
 
+  if search:
+    base_query = base_query.where(col(Problem.title).ilike(f"%{search.strip()}%"))
+
+  if problem_types:
+    types = [t.strip() for t in problem_types.split(",") if t.strip()]
+    if types:
+      base_query = base_query.where(col(Problem.problem_type).in_(types))
+
   total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
 
   problems = session.exec(
-    base_query.offset((page - 1) * page_size).limit(page_size)
+    base_query.order_by(col(Problem.id).asc())
+    .offset((page - 1) * page_size)
+    .limit(page_size)
   ).all()
 
   return ProblemListResponse(

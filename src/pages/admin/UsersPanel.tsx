@@ -1,15 +1,6 @@
 import { Effect } from 'effect'
-import { createResource, createSignal, For, type JSX, Match, Show, Suspense, Switch } from 'solid-js'
-import {
-  adminBanUser,
-  adminDemote,
-  adminLiftBan,
-  adminListBans,
-  adminListUsers,
-  adminPromote,
-  type BanItem,
-  type UserAdminItem
-} from '../../api/admin'
+import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { adminBanUser, adminDemote, adminListUsers, adminPromote, type UserAdminItem } from '../../api/admin'
 import { Pagination } from '../../components/Pagination'
 import { useAuth } from '../../context/auth'
 import { useDialog } from '../../context/dialog'
@@ -33,9 +24,9 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
   const dialog = useDialog()
   const isSuperadmin = (): boolean => state.user?.role === 'superadmin'
 
-  const [users, { refetch: refetchUsers }] = createResource(() => Effect.runPromise(adminListUsers(props.token)))
-  const [bans, { refetch: refetchBans }] = createResource(() => Effect.runPromise(adminListBans(props.token)))
-
+  const [items, setItems] = createSignal<readonly UserAdminItem[]>([])
+  const [total, setTotal] = createSignal(0)
+  const [loading, setLoading] = createSignal(true)
   const [page, setPage] = createSignal(1)
   const pageSize = 12
 
@@ -45,19 +36,45 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
   const [banReason, setBanReason] = createSignal('')
   const [banExpiry, setBanExpiry] = createSignal('')
 
-  const pagedUsers = (): UserAdminItem[] => {
-    const list = users() ?? []
-    const start = (page() - 1) * pageSize
-    return list.slice(start, start + pageSize)
+  // Cache pages so navigating back does not re-fetch
+  const pageCache = new Map<number, { items: readonly UserAdminItem[]; total: number }>()
+
+  const loadPage = (p: number, force = false): void => {
+    if (!force && pageCache.has(p)) {
+      const cached = pageCache.get(p)!
+      setItems(cached.items)
+      setTotal(cached.total)
+      setPage(p)
+      return
+    }
+
+    setLoading(true)
+    Effect.runPromise(adminListUsers(props.token, p, pageSize))
+      .then((res) => {
+        pageCache.set(p, { items: res.items, total: res.total })
+        setItems(res.items)
+        setTotal(res.total)
+        setPage(res.page)
+      })
+      .catch((e) => setErr(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false))
   }
+
+  const reload = (): void => {
+    pageCache.clear()
+    loadPage(page(), true)
+  }
+
+  createEffect(() => {
+    loadPage(page())
+  })
 
   const withBusy = async (key: string, fn: () => Promise<unknown>): Promise<void> => {
     setBusy(key)
     setErr(null)
     try {
       await fn()
-      await refetchUsers()
-      await refetchBans()
+      reload()
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
@@ -112,21 +129,8 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
     })
   }
 
-  const liftBan = async (ban: BanItem): Promise<void> => {
-    const ok = await dialog.confirm({
-      title: 'Lift Ban',
-      message: `Lift ban on "${ban.username}"?`,
-      confirmText: 'Lift Ban'
-    })
-    if (!ok) return
-    void withBusy(`ban-${ban.id}`, async () => {
-      await Effect.runPromise(adminLiftBan(ban.id, props.token))
-      dialog.toast(`Lifted ban on ${ban.username}`, 'success')
-    })
-  }
-
   return (
-    <div class="flex flex-col gap-8">
+    <div class="flex flex-col gap-6">
       <Show when={err()}>
         <div class="text-xs text-red-400 bg-red-900/20 border border-red-800 rounded px-3 py-2">{err()}</div>
       </Show>
@@ -134,148 +138,93 @@ export const UsersPanel = (props: { token: string }): JSX.Element => {
       {/* Users table */}
       <div class="flex flex-col gap-3">
         <span class="text-dim text-xs uppercase tracking-wider">Users</span>
-        <Suspense fallback={<div class="text-dim text-sm">Loading…</div>}>
-          <Switch>
-            <Match when={users.error}>
-              <div class="text-xs text-red-400">Failed: {String(users.error)}</div>
-            </Match>
-            <Match when={users()}>
-              <div class="overflow-x-auto">
-                <table class="admin-table w-full text-sm">
-                  <thead>
-                    <tr>
-                      <th>Username</th>
-                      <th>Role</th>
-                      <th>Joined</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <For each={pagedUsers()}>
-                      {(u) => (
-                        <tr>
-                          <td>
-                            <div class="flex items-center gap-2 min-h-6">
-                              <Show when={u.avatar_url}>
-                                <img class="size-5 rounded-full object-cover shrink-0" src={u.avatar_url!} alt="" />
-                              </Show>
-                              <span class="font-mono text-xs text-soft">{u.username}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <RoleBadge role={u.role} />
-                          </td>
-                          <td class="text-dim text-xs">{fmtDate(u.created_at)}</td>
-                          <td>
-                            <div class="flex items-center gap-1.5 min-h-6">
-                              <Show when={isSuperadmin() && u.role === 'user'}>
-                                <button
-                                  type="button"
-                                  class="btn-xs btn-muted"
-                                  disabled={busy() === u.username}
-                                  onClick={() => promote(u)}
-                                >
-                                  Promote
-                                </button>
-                              </Show>
-                              <Show when={isSuperadmin() && u.role === 'admin'}>
-                                <button
-                                  type="button"
-                                  class="btn-xs btn-muted"
-                                  disabled={busy() === u.username}
-                                  onClick={() => demote(u)}
-                                >
-                                  Demote
-                                </button>
-                              </Show>
-                              <button
-                                type="button"
-                                class="btn-xs btn-danger"
-                                disabled={
-                                  !(
-                                    u.role !== 'superadmin' &&
-                                    u.username !== state.user?.username &&
-                                    (u.role !== 'admin' || state.user?.role === 'superadmin')
-                                  ) || busy() === u.username
-                                }
-                                onClick={() => openBan(u)}
-                              >
-                                Ban
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </For>
-                  </tbody>
-                </table>
-              </div>
+        <Show when={loading() && items().length === 0}>
+          <div class="text-dim text-sm">Loading…</div>
+        </Show>
 
-              <Show when={(users() ?? []).length > 0}>
-                <Pagination
-                  page={page()}
-                  pageSize={pageSize}
-                  total={(users() ?? []).length}
-                  onPageChange={(p) => setPage(p)}
-                />
-              </Show>
-            </Match>
-          </Switch>
-        </Suspense>
-      </div>
-
-      {/* Active bans table */}
-      <div class="flex flex-col gap-3">
-        <span class="text-dim text-xs uppercase tracking-wider">Active Bans</span>
-        <Suspense fallback={<div class="text-dim text-sm">Loading…</div>}>
-          <Switch>
-            <Match when={bans.error}>
-              <div class="text-xs text-red-400">Failed: {String(bans.error)}</div>
-            </Match>
-            <Match when={(bans() ?? []).filter((b) => b.is_active).length === 0}>
-              <div class="text-dim text-xs">No active bans.</div>
-            </Match>
-            <Match when={bans()}>
-              <div class="overflow-x-auto">
-                <table class="admin-table w-full text-sm">
-                  <thead>
+        <Show when={!loading() || items().length > 0}>
+          <div class="overflow-x-auto">
+            <table class="admin-table w-full text-sm">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <For each={items()}>
+                  {(u) => (
                     <tr>
-                      <th>User</th>
-                      <th>Reason</th>
-                      <th>Banned</th>
-                      <th>Expires</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <For each={(bans() ?? []).filter((b) => b.is_active)}>
-                      {(ban) => (
-                        <tr>
-                          <td class="font-mono text-xs text-soft">{ban.username}</td>
-                          <td class="text-xs text-dim max-w-48 truncate" title={ban.reason}>
-                            {ban.reason}
-                          </td>
-                          <td class="text-dim text-xs">{fmtDate(ban.banned_at)}</td>
-                          <td class="text-dim text-xs">{fmtDate(ban.expires_at)}</td>
-                          <td>
+                      <td>
+                        <div class="flex items-center gap-2 min-h-6">
+                          <Show when={u.avatar_url}>
+                            <img class="size-5 rounded-full object-cover shrink-0" src={u.avatar_url!} alt="" />
+                          </Show>
+                          <span class="font-mono text-xs text-soft">{u.username}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <RoleBadge role={u.role} />
+                      </td>
+                      <td class="text-dim text-xs">{fmtDate(u.created_at)}</td>
+                      <td>
+                        <div class="flex items-center gap-1.5 min-h-6">
+                          <Show when={isSuperadmin() && u.role === 'user'}>
                             <button
                               type="button"
-                              class="btn-xs btn-ok"
-                              disabled={busy() === `ban-${ban.id}`}
-                              onClick={() => liftBan(ban)}
+                              class="btn-xs btn-muted"
+                              disabled={busy() === u.username}
+                              onClick={() => promote(u)}
                             >
-                              Lift
+                              Promote
                             </button>
-                          </td>
-                        </tr>
-                      )}
-                    </For>
-                  </tbody>
-                </table>
-              </div>
-            </Match>
-          </Switch>
-        </Suspense>
+                          </Show>
+                          <Show when={isSuperadmin() && u.role === 'admin'}>
+                            <button
+                              type="button"
+                              class="btn-xs btn-muted"
+                              disabled={busy() === u.username}
+                              onClick={() => demote(u)}
+                            >
+                              Demote
+                            </button>
+                          </Show>
+                          <button
+                            type="button"
+                            class="btn-xs btn-danger"
+                            title={
+                              u.role === 'superadmin' || u.username === state.user?.username
+                                ? 'Cannot ban superadmin or yourself'
+                                : u.role === 'admin' && state.user?.role !== 'superadmin'
+                                  ? 'Only superadmin can ban admins'
+                                  : undefined
+                            }
+                            disabled={
+                              !(
+                                u.role !== 'superadmin' &&
+                                u.username !== state.user?.username &&
+                                (u.role !== 'admin' || state.user?.role === 'superadmin')
+                              ) || busy() === u.username
+                            }
+                            onClick={() => openBan(u)}
+                          >
+                            Ban
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </For>
+              </tbody>
+            </table>
+          </div>
+
+          <Show when={total() > 0}>
+            <Pagination page={page()} pageSize={pageSize} total={total()} onPageChange={(p) => setPage(p)} />
+          </Show>
+        </Show>
       </div>
 
       {/* Ban modal */}

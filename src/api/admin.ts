@@ -5,10 +5,12 @@ import { ApiError } from './index'
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
 export type ProblemAdminItem = components['schemas']['ProblemAdminItem']
+export type ProblemAdminListResponse = components['schemas']['PaginatedResponse_ProblemAdminItem_']
 export type ProblemAdminDetail = components['schemas']['ProblemAdminDetail']
 export type ProblemCreate = components['schemas']['ProblemCreate']
 export type ProblemUpdate = components['schemas']['ProblemUpdate']
 export type UserAdminItem = components['schemas']['UserAdminItem']
+export type UserAdminListResponse = components['schemas']['PaginatedResponse_UserAdminItem_']
 export type BanItem = components['schemas']['BanItem']
 export type BanCreate = components['schemas']['BanCreate']
 
@@ -45,8 +47,12 @@ const adminFetch = <A>(path: string, token: string, init?: RequestInit): Effect.
 
 // ── Problems ─────────────────────────────────────────────────────────────
 
-export const adminListProblems = (token: string): Effect.Effect<ProblemAdminItem[], ApiError | Error> =>
-  adminFetch<ProblemAdminItem[]>('/admin/problems', token)
+export const adminListProblems = (
+  token: string,
+  page = 1,
+  pageSize = 20
+): Effect.Effect<ProblemAdminListResponse, ApiError | Error> =>
+  adminFetch<ProblemAdminListResponse>(`/admin/problems?page=${page}&page_size=${pageSize}`, token)
 
 export const adminGetProblem = (slug: string, token: string): Effect.Effect<ProblemAdminDetail, ApiError | Error> =>
   adminFetch<ProblemAdminDetail>(`/admin/problems/${encodeURIComponent(slug)}`, token)
@@ -81,8 +87,12 @@ export const adminPublishToggle = (
 
 // ── Users ─────────────────────────────────────────────────────────────────
 
-export const adminListUsers = (token: string): Effect.Effect<UserAdminItem[], ApiError | Error> =>
-  adminFetch<UserAdminItem[]>('/admin/users', token)
+export const adminListUsers = (
+  token: string,
+  page = 1,
+  pageSize = 20
+): Effect.Effect<UserAdminListResponse, ApiError | Error> =>
+  adminFetch<UserAdminListResponse>(`/admin/users?page=${page}&page_size=${pageSize}`, token)
 
 export const adminListBans = (token: string): Effect.Effect<BanItem[], ApiError | Error> =>
   adminFetch<BanItem[]>('/admin/bans', token)

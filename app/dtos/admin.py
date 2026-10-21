@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.dtos.pagination import PaginatedResponse
 from app.dtos.user import Role
 from app.models.problem import JudgeConfig
 
@@ -42,6 +43,9 @@ class ProblemAdminItem(BaseModel):
   is_published: bool
 
 
+ProblemAdminListResponse = PaginatedResponse[ProblemAdminItem]
+
+
 class ProblemAdminDetail(BaseModel):
   slug: str
   title: str
@@ -57,6 +61,9 @@ class UserAdminItem(BaseModel):
   avatar_url: str | None
   role: Role
   created_at: datetime
+
+
+UserAdminListResponse = PaginatedResponse[UserAdminItem]
 
 
 class BanCreate(BaseModel):

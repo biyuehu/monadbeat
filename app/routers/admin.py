@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.auth.dependencies import (
   is_superadmin,
@@ -16,9 +16,11 @@ from app.dtos.admin import (
   BanItem,
   ProblemAdminDetail,
   ProblemAdminItem,
+  ProblemAdminListResponse,
   ProblemCreate,
   ProblemUpdate,
   UserAdminItem,
+  UserAdminListResponse,
 )
 from app.dtos.problem import ProblemDetailResponse
 from app.models.ban import Ban
@@ -52,11 +54,24 @@ def _problem_item(problem: Problem) -> ProblemAdminItem:
 
 @router.get("/problems")
 def list_all_problems(
+  page: int = 1,
+  page_size: int = 20,
   session: Session = Depends(get_session),
   _: User = Depends(require_admin),
-) -> list[ProblemAdminItem]:
-  problems = session.exec(select(Problem)).all()
-  return [_problem_item(p) for p in problems]
+) -> ProblemAdminListResponse:
+  base_query = select(Problem)
+  total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+  problems = session.exec(
+    base_query.order_by(col(Problem.id).asc())
+    .offset((page - 1) * page_size)
+    .limit(page_size)
+  ).all()
+  return ProblemAdminListResponse(
+    items=[_problem_item(p) for p in problems],
+    total=total,
+    page=page,
+    page_size=page_size,
+  )
 
 
 @router.get("/problems/{slug}")
@@ -161,11 +176,24 @@ def delete_problem(
 
 @router.get("/users")
 def list_users(
+  page: int = 1,
+  page_size: int = 20,
   session: Session = Depends(get_session),
   _: User = Depends(require_admin),
-) -> list[UserAdminItem]:
-  users = session.exec(select(User)).all()
-  return [_user_item(u) for u in users]
+) -> UserAdminListResponse:
+  base_query = select(User)
+  total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+  users = session.exec(
+    base_query.order_by(col(User.id).asc())
+    .offset((page - 1) * page_size)
+    .limit(page_size)
+  ).all()
+  return UserAdminListResponse(
+    items=[_user_item(u) for u in users],
+    total=total,
+    page=page,
+    page_size=page_size,
+  )
 
 
 def _ban_item(ban: Ban, username: str) -> BanItem:

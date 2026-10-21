@@ -1,6 +1,10 @@
 import type { components } from './api-types'
 
 export type ProblemListItem = components['schemas']['ProblemListItem']
+export type ProblemAdminItem = components['schemas']['ProblemAdminItem']
+export type ProblemAdminListResponse = components['schemas']['PaginatedResponse_ProblemAdminItem_']
+export type UserAdminItem = components['schemas']['UserAdminItem']
+export type UserAdminListResponse = components['schemas']['PaginatedResponse_UserAdminItem_']
 export type ProblemDetail = components['schemas']['ProblemDetailResponse']
 export type TextDisplay = components['schemas']['TextDisplay']
 export type ChoiceDisplay = components['schemas']['ChoiceDisplay']

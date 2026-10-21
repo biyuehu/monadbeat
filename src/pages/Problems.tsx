@@ -1,13 +1,20 @@
 import { useNavigate } from '@solidjs/router'
 import { Effect, flow } from 'effect'
-import { createSignal, For, type JSX, Show } from 'solid-js'
-import { fetchAllProblems, fetchProgress } from '../api'
+import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { fetchProblems, fetchProgress } from '../api'
 import { FilterPanel } from '../components/FilterPanel'
 import { FooterLine, Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
-import { isProblemType, type ProblemListItem, ProblemTypeLabel, ProblemTypeOrder, type ProgressItem } from '../types'
+import {
+  isProblemType,
+  type ProblemListItem,
+  type ProblemType,
+  ProblemTypeLabel,
+  ProblemTypeOrder,
+  type ProgressItem
+} from '../types'
 
 const stars = (difficulty: number): string => Array.from({ length: 5 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
 
@@ -33,7 +40,8 @@ export const Problems = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
   const { state: filter, isFiltering } = useFilter()
-  const [problems, setProblems] = createSignal<readonly ProblemListItem[]>([])
+  const [items, setItems] = createSignal<readonly ProblemListItem[]>([])
+  const [total, setTotal] = createSignal(0)
   const [progress, setProgress] = createSignal<ReadonlyMap<string, ProgressItem>>(new Map())
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
@@ -42,10 +50,45 @@ export const Problems = (): JSX.Element => {
   const [page, setPage] = createSignal(1)
   const pageSize = 15
 
-  Effect.runPromise(fetchAllProblems())
-    .then(setProblems)
-    .catch(flow(String, setError))
-    .finally(() => setLoading(false))
+  // Cache pages keyed by `${search}::${activeTypes}::${page}`
+  const pageCache = new Map<string, { items: readonly ProblemListItem[]; total: number }>()
+
+  const activeTypes = (): string[] => ProblemTypeOrder.filter((t) => filter[t as ProblemType])
+
+  const loadProblems = (p: number): void => {
+    const s = search().trim()
+    const types = activeTypes()
+    const cacheKey = `${s}::${types.join(',')}::${p}`
+
+    if (pageCache.has(cacheKey)) {
+      const cached = pageCache.get(cacheKey)!
+      setItems(cached.items)
+      setTotal(cached.total)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    Effect.runPromise(fetchProblems(p, pageSize, s, types))
+      .then((res) => {
+        pageCache.set(cacheKey, { items: res.items, total: res.total })
+        setItems(res.items)
+        setTotal(res.total)
+      })
+      .catch(flow(String, setError))
+      .finally(() => setLoading(false))
+  }
+
+  createEffect(() => {
+    // When search or filter changes, reset to page 1
+    search()
+    activeTypes()
+    setPage(1)
+  })
+
+  createEffect(() => {
+    loadProblems(page())
+  })
 
   const token = auth.token
   if (token !== null) {
@@ -63,23 +106,9 @@ export const Problems = (): JSX.Element => {
     return { status: item.status, attempts: item.attempts }
   }
 
-  const visible = (): ProblemListItem[] =>
-    problems()
-      .filter((p) => isProblemType(p.problem_type) && filter[p.problem_type])
-      .filter((p) => p.title.toLowerCase().includes(search().toLowerCase()))
-
-  const pagedItems = (): ProblemListItem[] => {
-    const all = visible()
-    const start = (page() - 1) * pageSize
-    return all.slice(start, start + pageSize)
-  }
-
   const countText = (): string => {
     if (loading()) return 'Loading...'
-    if (problems().length === 0) return '0 problems'
-    return visible().length === problems().length
-      ? `${problems().length} problems`
-      : `${visible().length} / ${problems().length} problems`
+    return `${total()} problems`
   }
 
   return (
@@ -144,67 +173,54 @@ export const Problems = (): JSX.Element => {
 
       <div class="list-box flex-1 min-h-25 overflow-y-auto w-full max-w-200 mx-auto">
         <Show when={!loading()} fallback={<div class="status-text text-dim">⏳ Loading problems...</div>}>
-          <Show
-            when={problems().length > 0}
-            fallback={
-              <div class="empty-box flex-1">
-                <div class="empty-title">No problems yet</div>
-                <div class="empty-text">The problem bank is empty. Check back later.</div>
-              </div>
-            }
-          >
-            <Show
-              when={visible().length > 0}
-              fallback={
-                <div class="empty-box flex-1">
-                  <div class="empty-title">No matches</div>
-                  <div class="empty-text">No problems match your filter or search.</div>
-                </div>
-              }
-            >
-              <For each={pagedItems()}>
-                {(problem) => {
-                  const st = (): { status: Status; attempts: number } => statusOf(problem.slug)
-                  return (
-                    <button
-                      type="button"
-                      class="group list-row min-w-0 shrink-0 gap-2 md:gap-3 px-2.5 py-2 md:px-3.5 md:py-2.5 bg-row text-left font-[inherit] cursor-pointer border-y-0 border-r-0 hover:bg-hl hover:border-l-hl-line"
-                      onClick={() => navigate(`/quiz/${problem.slug}`)}
-                    >
-                      <span class="w-6 shrink-0 text-center text-base">{statusStyle[st().status].icon}</span>
-                      <span
-                        title={problem.title}
-                        class="flex-1 min-w-0 truncate max-[420px]:whitespace-normal text-[0.95rem] max-[420px]:text-[0.85rem] font-medium tracking-tight text-text2 group-hover:text-hl-fg"
-                      >
-                        {problem.title}
-                      </span>
-                      <div class="flex w-32 max-md:w-24 min-w-0 shrink-0 justify-end">
-                        <span class="chip group-hover:text-hl-tag group-hover:border-brand">
-                          {isProblemType(problem.problem_type)
-                            ? ProblemTypeLabel[problem.problem_type]
-                            : problem.problem_type}
-                        </span>
-                      </div>
-                      <span class="w-16 shrink-0 text-right text-[0.65rem] whitespace-nowrap text-dim max-[560px]:hidden group-hover:text-hl-sub">
-                        {stars(problem.difficulty)}
-                      </span>
-                      <span
-                        class={`w-[4.2rem] max-md:w-14 shrink-0 py-0.5 text-center text-[0.65rem] tracking-wide whitespace-nowrap border ${statusStyle[st().status].chipCls}`}
-                        title={statusTitle(st().status, st().attempts)}
-                      >
-                        {statusLabel(st().status, st().attempts)}
-                      </span>
-                    </button>
-                  )
-                }}
-              </For>
-            </Show>
+          <Show when={!loading() && total() === 0} fallback={null}>
+            <div class="empty-box flex-1">
+              <div class="empty-title">No matches</div>
+              <div class="empty-text">No problems match your filter or search.</div>
+            </div>
           </Show>
+
+          <For each={items()}>
+            {(problem) => {
+              const st = (): { status: Status; attempts: number } => statusOf(problem.slug)
+              return (
+                <button
+                  type="button"
+                  class="group list-row min-w-0 shrink-0 gap-2 md:gap-3 px-2.5 py-2 md:px-3.5 md:py-2.5 bg-row text-left font-[inherit] cursor-pointer border-y-0 border-r-0 hover:bg-hl hover:border-l-hl-line"
+                  onClick={() => navigate(`/quiz/${problem.slug}`)}
+                >
+                  <span class="w-6 shrink-0 text-center text-base">{statusStyle[st().status].icon}</span>
+                  <span
+                    title={problem.title}
+                    class="flex-1 min-w-0 truncate max-[420px]:whitespace-normal text-[0.95rem] max-[420px]:text-[0.85rem] font-medium tracking-tight text-text2 group-hover:text-hl-fg"
+                  >
+                    {problem.title}
+                  </span>
+                  <div class="flex w-32 max-md:w-24 min-w-0 shrink-0 justify-end">
+                    <span class="chip group-hover:text-hl-tag group-hover:border-brand">
+                      {isProblemType(problem.problem_type)
+                        ? ProblemTypeLabel[problem.problem_type]
+                        : problem.problem_type}
+                    </span>
+                  </div>
+                  <span class="w-16 shrink-0 text-right text-[0.65rem] whitespace-nowrap text-dim max-[560px]:hidden group-hover:text-hl-sub">
+                    {stars(problem.difficulty)}
+                  </span>
+                  <span
+                    class={`w-[4.2rem] max-md:w-14 shrink-0 py-0.5 text-center text-[0.65rem] tracking-wide whitespace-nowrap border ${statusStyle[st().status].chipCls}`}
+                    title={statusTitle(st().status, st().attempts)}
+                  >
+                    {statusLabel(st().status, st().attempts)}
+                  </span>
+                </button>
+              )
+            }}
+          </For>
         </Show>
       </div>
 
-      <Show when={visible().length > 0}>
-        <Pagination page={page()} pageSize={pageSize} total={visible().length} onPageChange={(p) => setPage(p)} />
+      <Show when={total() > 0}>
+        <Pagination page={page()} pageSize={pageSize} total={total()} onPageChange={(p) => setPage(p)} />
       </Show>
 
       <FooterLine class="!mt-4" right={`${ProblemTypeOrder.length} types · Haskell Practice`} />

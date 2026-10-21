@@ -2,10 +2,11 @@ import { useNavigate } from '@solidjs/router'
 import { createSignal, type JSX, Match, onMount, Show, Switch } from 'solid-js'
 import { Frame } from '../../components/Frame'
 import { useAuth } from '../../context/auth'
+import { BansPanel } from './BansPanel'
 import { ProblemsPanel } from './ProblemsPanel'
 import { UsersPanel } from './UsersPanel'
 
-type Tab = 'problems' | 'users'
+type Tab = 'problems' | 'users' | 'bans'
 
 export const Admin = (): JSX.Element => {
   const { state } = useAuth()
@@ -36,15 +37,21 @@ export const Admin = (): JSX.Element => {
 
           {/* Tabs */}
           <div class="flex gap-1 border-b border-sep">
-            {(['problems', 'users'] as Tab[]).map((t) => (
+            {(
+              [
+                { id: 'problems', label: '📋 Problems' },
+                { id: 'users', label: '👥 Users' },
+                { id: 'bans', label: '🚫 Bans' }
+              ] as const
+            ).map((t) => (
               <button
                 type="button"
                 class={`px-4 py-1.5 text-sm transition-colors border-b-2 -mb-px ${
-                  tab() === t ? 'border-accent text-accent' : 'border-transparent text-dim hover:text-soft'
+                  tab() === t.id ? 'border-accent text-accent' : 'border-transparent text-dim hover:text-soft'
                 }`}
-                onClick={() => setTab(t)}
+                onClick={() => setTab(t.id)}
               >
-                {t === 'problems' ? '📋 Problems' : '👥 Users & Bans'}
+                {t.label}
               </button>
             ))}
           </div>
@@ -56,6 +63,9 @@ export const Admin = (): JSX.Element => {
             </Match>
             <Match when={tab() === 'users'}>
               <Show when={state.token}>{(token) => <UsersPanel token={token()} />}</Show>
+            </Match>
+            <Match when={tab() === 'bans'}>
+              <Show when={state.token}>{(token) => <BansPanel token={token()} />}</Show>
             </Match>
           </Switch>
         </div>
