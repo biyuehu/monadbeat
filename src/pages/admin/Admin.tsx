@@ -4,9 +4,10 @@ import { Frame } from '../../components/Frame'
 import { useAuth } from '../../context/auth'
 import { BansPanel } from './BansPanel'
 import { ProblemsPanel } from './ProblemsPanel'
+import { SubmissionsPanel } from './SubmissionsPanel'
 import { UsersPanel } from './UsersPanel'
 
-type Tab = 'problems' | 'users' | 'bans'
+type Tab = 'problems' | 'users' | 'bans' | 'submissions'
 
 export const Admin = (): JSX.Element => {
   const { state } = useAuth()
@@ -41,7 +42,8 @@ export const Admin = (): JSX.Element => {
               [
                 { id: 'problems', label: '📋 Problems' },
                 { id: 'users', label: '👥 Users' },
-                { id: 'bans', label: '🚫 Bans' }
+                { id: 'bans', label: '🚫 Bans' },
+                { id: 'submissions', label: '📜 Submissions' }
               ] as const
             ).map((t) => (
               <button
@@ -66,6 +68,9 @@ export const Admin = (): JSX.Element => {
             </Match>
             <Match when={tab() === 'bans'}>
               <Show when={state.token}>{(token) => <BansPanel token={token()} />}</Show>
+            </Match>
+            <Match when={tab() === 'submissions'}>
+              <Show when={state.token}>{(token) => <SubmissionsPanel token={token()} />}</Show>
             </Match>
           </Switch>
         </div>

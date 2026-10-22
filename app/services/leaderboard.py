@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from typing import Any, cast
+from datetime import UTC, datetime, timedelta
+from typing import Any, Literal, cast
 
 from sqlalchemy import case, func, select
 from sqlmodel import Session
@@ -25,11 +25,22 @@ def _col(attr: Any) -> Any:
   return cast(Any, attr)
 
 
-def compute_leaderboard(session: Session, limit: int) -> list[LeaderboardEntry]:
+LeaderboardTimeframe = Literal["all", "month", "week"]
+
+
+def compute_leaderboard(
+  session: Session, limit: int, timeframe: LeaderboardTimeframe = "all"
+) -> list[LeaderboardEntry]:
   now = datetime.now(UTC).replace(tzinfo=None)
 
+  time_filter = None
+  if timeframe == "month":
+    time_filter = now - timedelta(days=30)
+  elif timeframe == "week":
+    time_filter = now - timedelta(days=7)
+
   # Step 1: Chronologically rank all submissions for published problems.
-  sub_ranked = (
+  sub_ranked_query = (
     select(
       _col(Submission.user_id).label("user_id"),
       _col(Submission.problem_id).label("problem_id"),
@@ -43,8 +54,14 @@ def compute_leaderboard(session: Session, limit: int) -> list[LeaderboardEntry]:
     )
     .join(Problem, _col(Submission.problem_id) == _col(Problem.id))
     .where(_col(Problem.is_published) == True)
-    .subquery()
   )
+
+  if time_filter is not None:
+    sub_ranked_query = sub_ranked_query.where(
+      _col(Submission.submitted_at) >= time_filter
+    )
+
+  sub_ranked = sub_ranked_query.subquery()
 
   # Step 2: Find the attempt count at which the user first correctly solved the problem.
   first_solve = (

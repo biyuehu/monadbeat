@@ -81,3 +81,18 @@ class BanItem(BaseModel):
   expires_at: datetime | None
   lifted_at: datetime | None
   is_active: bool
+
+
+class SubmissionAdminItem(BaseModel):
+  id: int
+  username: str
+  user_avatar: str | None
+  problem_slug: str
+  problem_title: str
+  user_answer: str
+  is_correct: bool
+  judge_detail: str | None
+  submitted_at: datetime
+
+
+SubmissionAdminListResponse = PaginatedResponse[SubmissionAdminItem]

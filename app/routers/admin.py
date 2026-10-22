@@ -19,6 +19,8 @@ from app.dtos.admin import (
   ProblemAdminListResponse,
   ProblemCreate,
   ProblemUpdate,
+  SubmissionAdminItem,
+  SubmissionAdminListResponse,
   UserAdminItem,
   UserAdminListResponse,
 )
@@ -313,3 +315,62 @@ def demote_user(
   session.commit()
   session.refresh(target)
   return _user_item(target)
+
+
+@router.get("/submissions")
+def list_all_submissions(
+  username: str | None = None,
+  problem_slug: str | None = None,
+  is_correct: bool | None = None,
+  page: int = 1,
+  page_size: int = 20,
+  session: Session = Depends(get_session),
+  _: User = Depends(require_admin),
+) -> SubmissionAdminListResponse:
+  base_query = (
+    select(
+      Submission,
+      User,
+      Problem,
+    )
+    .join(User, col(Submission.user_id) == col(User.id))
+    .join(Problem, col(Submission.problem_id) == col(Problem.id))
+    .order_by(col(Submission.submitted_at).desc())
+  )
+
+  if username and username.strip():
+    base_query = base_query.where(col(User.username).ilike(f"%{username.strip()}%"))
+
+  if problem_slug and problem_slug.strip():
+    base_query = base_query.where(col(Problem.slug).ilike(f"%{problem_slug.strip()}%"))
+
+  if is_correct is not None:
+    base_query = base_query.where(Submission.is_correct == is_correct)
+
+  total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+
+  items = []
+  for sub, user, prob in session.exec(
+    base_query.offset((page - 1) * page_size).limit(page_size)
+  ).all():
+    assert sub.id is not None
+    items.append(
+      SubmissionAdminItem(
+        id=sub.id,
+        username=user.username,
+        user_avatar=user.avatar_url,
+        problem_slug=prob.slug,
+        problem_title=prob.title,
+        user_answer=sub.user_answer,
+        is_correct=sub.is_correct,
+        judge_detail=sub.judge_detail,
+        submitted_at=sub.submitted_at,
+      )
+    )
+
+  return SubmissionAdminListResponse(
+    items=items,
+    total=total,
+    page=page,
+    page_size=page_size,
+  )

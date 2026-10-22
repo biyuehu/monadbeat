@@ -1,6 +1,6 @@
 import { Effect, flow } from 'effect'
-import { createSignal, For, type JSX, Show } from 'solid-js'
-import { fetchLeaderboard } from '../api'
+import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { fetchLeaderboard, type LeaderboardTimeframe } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
@@ -13,18 +13,31 @@ const rankColor = (rank: number): string => {
   return 'text-dim group-hover:text-hl-fg'
 }
 
+const timeframes: readonly { key: LeaderboardTimeframe; label: string }[] = [
+  { key: 'all', label: 'All Time' },
+  { key: 'month', label: 'This Month' },
+  { key: 'week', label: 'This Week' }
+]
+
 export const Leaderboard = (): JSX.Element => {
   const { state: auth } = useAuth()
+  const [timeframe, setTimeframe] = createSignal<LeaderboardTimeframe>('all')
   const [entries, setEntries] = createSignal<readonly LeaderboardItem[]>([])
   const [error, setError] = createSignal<string | null>(null)
   const [loading, setLoading] = createSignal(true)
   const [page, setPage] = createSignal(1)
   const pageSize = 20
 
-  Effect.runPromise(fetchLeaderboard())
-    .then(setEntries)
-    .catch(flow(String, setError))
-    .finally(() => setLoading(false))
+  createEffect(() => {
+    const tf = timeframe()
+    setLoading(true)
+    setError(null)
+    setPage(1)
+    Effect.runPromise(fetchLeaderboard(tf))
+      .then(setEntries)
+      .catch(flow(String, setError))
+      .finally(() => setLoading(false))
+  })
 
   const pagedEntries = (): LeaderboardItem[] => {
     const list = entries()
@@ -36,9 +49,27 @@ export const Leaderboard = (): JSX.Element => {
 
   return (
     <Frame title="Leaderboard">
-      <div class="page-header items-baseline !mb-5">
-        <span class="page-title text-3xl">Leaderboard</span>
-        <span class="text-[0.65rem] uppercase tracking-wider text-dim">Top players</span>
+      <div class="page-header items-center justify-between !mb-5 flex-wrap gap-3">
+        <div class="flex items-baseline gap-3">
+          <span class="page-title text-3xl">Leaderboard</span>
+          <span class="text-[0.65rem] uppercase tracking-wider text-dim">Top players</span>
+        </div>
+
+        <div class="flex items-center gap-1 bg-field p-1 border border-field-line rounded">
+          <For each={timeframes}>
+            {(tf) => (
+              <button
+                type="button"
+                class={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+                  timeframe() === tf.key ? 'bg-brand text-white shadow-sm' : 'text-dim hover:text-soft bg-transparent'
+                }`}
+                onClick={() => setTimeframe(tf.key)}
+              >
+                {tf.label}
+              </button>
+            )}
+          </For>
+        </div>
       </div>
 
       <div class="flex items-center gap-2 md:gap-3 w-full max-w-200 mx-auto pb-2 pl-5 pr-[17px] md:pl-[22px] md:pr-[19px] text-[0.65rem] uppercase tracking-widest text-muted shrink-0">

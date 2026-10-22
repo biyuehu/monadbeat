@@ -68,13 +68,11 @@ jobs:
         run: bun run lint
 
       - name: Generate OpenAPI & TypeScript types
-        run: |
-          uv run python -m scripts.export_openapi
-          bunx openapi-typescript openapi.json -o src/types/api-types.ts
+        run: bun run gen-types
 
       - name: TypeScript typecheck
         run: bun run typecheck
 
       - name: Vite build
-        run: bun run build
+        run: bunx vite build
 

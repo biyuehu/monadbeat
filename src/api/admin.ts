@@ -11,6 +11,8 @@ export type ProblemCreate = components['schemas']['ProblemCreate']
 export type ProblemUpdate = components['schemas']['ProblemUpdate']
 export type UserAdminItem = components['schemas']['UserAdminItem']
 export type UserAdminListResponse = components['schemas']['PaginatedResponse_UserAdminItem_']
+export type SubmissionAdminItem = components['schemas']['SubmissionAdminItem']
+export type SubmissionAdminListResponse = components['schemas']['PaginatedResponse_SubmissionAdminItem_']
 export type BanItem = components['schemas']['BanItem']
 export type BanCreate = components['schemas']['BanCreate']
 
@@ -115,3 +117,26 @@ export const adminPromote = (username: string, token: string): Effect.Effect<Use
 
 export const adminDemote = (username: string, token: string): Effect.Effect<UserAdminItem, ApiError | Error> =>
   adminFetch<UserAdminItem>(`/admin/users/${encodeURIComponent(username)}/demote`, token, { method: 'POST' })
+
+// ── Submissions ───────────────────────────────────────────────────────────
+
+export const adminListSubmissions = (
+  token: string,
+  opts?: {
+    page?: number
+    pageSize?: number
+    username?: string
+    problemSlug?: string
+    isCorrect?: boolean
+  }
+): Effect.Effect<SubmissionAdminListResponse, ApiError | Error> => {
+  const params = new URLSearchParams({
+    page: String(opts?.page ?? 1),
+    page_size: String(opts?.pageSize ?? 20)
+  })
+  if (opts?.username?.trim()) params.set('username', opts.username.trim())
+  if (opts?.problemSlug?.trim()) params.set('problem_slug', opts.problemSlug.trim())
+  if (opts?.isCorrect !== undefined) params.set('is_correct', String(opts.isCorrect))
+
+  return adminFetch<SubmissionAdminListResponse>(`/admin/submissions?${params.toString()}`, token)
+}

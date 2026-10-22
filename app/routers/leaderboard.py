@@ -4,14 +4,19 @@ from sqlmodel import Session
 from app.config import settings
 from app.db import get_session
 from app.dtos.leaderboard import LeaderboardItem, LeaderboardResponse
-from app.services.leaderboard import compute_leaderboard
+from app.services.leaderboard import LeaderboardTimeframe, compute_leaderboard
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
 
 @router.get("/")
-def get_leaderboard(session: Session = Depends(get_session)) -> LeaderboardResponse:
-  entries = compute_leaderboard(session, limit=settings.leaderboard_max_entries)
+def get_leaderboard(
+  timeframe: LeaderboardTimeframe = "all",
+  session: Session = Depends(get_session),
+) -> LeaderboardResponse:
+  entries = compute_leaderboard(
+    session, limit=settings.leaderboard_max_entries, timeframe=timeframe
+  )
   return LeaderboardResponse(
     items=[
       LeaderboardItem(

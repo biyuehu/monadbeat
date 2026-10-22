@@ -102,8 +102,12 @@ export const fetchProblemDetail = (
   return fetchJson<ProblemDetail>(`/problems/${encodeURIComponent(slug)}`, init)
 }
 
-export const fetchLeaderboard = (): Effect.Effect<readonly LeaderboardItem[], ApiError | Error> =>
-  fetchJson<{ items: LeaderboardItem[] }>('/leaderboard/').pipe(Effect.map((r) => r.items))
+export type LeaderboardTimeframe = 'all' | 'month' | 'week'
+
+export const fetchLeaderboard = (
+  timeframe: LeaderboardTimeframe = 'all'
+): Effect.Effect<readonly LeaderboardItem[], ApiError | Error> =>
+  fetchJson<{ items: LeaderboardItem[] }>(`/leaderboard/?timeframe=${timeframe}`).pipe(Effect.map((r) => r.items))
 
 export const fetchMe = (token: string): Effect.Effect<MeResponse, ApiError | Error> =>
   fetchJson<MeResponse>('/me', authInit(token))
