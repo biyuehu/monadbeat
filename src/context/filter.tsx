@@ -7,9 +7,9 @@ export type StatusFilterKey = 'todo' | 'correct' | 'wrong'
 export const StatusFilterOrder: readonly StatusFilterKey[] = ['todo', 'correct', 'wrong'] as const
 
 export const StatusFilterLabel: Record<StatusFilterKey, { label: string; icon: string }> = {
-  todo: { label: 'Unattempted (未做)', icon: '🔘' },
-  correct: { label: 'Solved (已做对)', icon: '🟢/🔵' },
-  wrong: { label: 'Attempted / Unsolved (未通过)', icon: '🔴' }
+  todo: { label: 'Unattempted', icon: '🔘' },
+  correct: { label: 'Solved', icon: '🟢/🔵' },
+  wrong: { label: 'Attempted / Unsolved', icon: '🔴' }
 }
 
 export const DifficultyList = [1, 2, 3, 4, 5] as const

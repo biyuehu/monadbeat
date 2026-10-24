@@ -38,7 +38,7 @@ export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.
           <div class="flex-1 min-h-0 overflow-y-auto px-4 py-4 flex flex-col gap-5">
             {/* Status Filter */}
             <div>
-              <div class="section-label mb-2">Completion Status (完成状态)</div>
+              <div class="section-label mb-2">Completion Status</div>
               <div class="flex flex-col gap-1">
                 {StatusFilterOrder.map((key) => (
                   <label class="flex items-center gap-2.5 px-2.5 py-2 border border-sep bg-row cursor-pointer select-none transition-colors hover:bg-brand-tint hover:border-hov">
@@ -57,7 +57,7 @@ export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.
 
             {/* Problem Type Filter */}
             <div>
-              <div class="section-label mb-2">Problem Type (题型)</div>
+              <div class="section-label mb-2">Problem Type</div>
               <div class="flex flex-col gap-1">
                 {ProblemTypeOrder.map((key) => (
                   <label class="flex items-center gap-2.5 px-2.5 py-2 border border-sep bg-row cursor-pointer select-none transition-colors hover:bg-brand-tint hover:border-hov">
@@ -76,7 +76,7 @@ export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.
 
             {/* Difficulty Filter */}
             <div>
-              <div class="section-label mb-2">Difficulty (难度星级)</div>
+              <div class="section-label mb-2">Difficulty</div>
               <div class="flex flex-col gap-1">
                 {DifficultyList.map((level) => (
                   <label class="flex items-center gap-2.5 px-2.5 py-2 border border-sep bg-row cursor-pointer select-none transition-colors hover:bg-brand-tint hover:border-hov">

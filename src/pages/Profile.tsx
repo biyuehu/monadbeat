@@ -208,9 +208,7 @@ export const Profile = (): JSX.Element => {
                 </Show>
                 <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Solved</div>
                 <div class="px-3 py-2.5 bg-row text-fg flex items-center gap-2">
-                  <span>
-                    {solvedCount()} / {problems().length}
-                  </span>
+                  <span>{solvedCount()}</span>
                   <Show when={firstTryCount() > 0}>
                     <span
                       class="text-xs text-accent bg-brand-bg border border-accent/40 rounded px-1.5 py-0.2"
@@ -225,7 +223,7 @@ export const Profile = (): JSX.Element => {
           </Show>
 
           <Show when={view() === 'done'}>
-            <ViewHeader title="Solved" sub={`${solvedCount()} / ${problems().length} Solved`} />
+            <ViewHeader title="Solved" sub={`${solvedCount()} Solved`} />
             <div class="list-box min-h-60">
               <Show
                 when={doneProblems().length > 0}
