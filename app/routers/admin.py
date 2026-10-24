@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, col, func, select
 
 from app.auth.dependencies import (
@@ -56,8 +56,8 @@ def _problem_item(problem: Problem) -> ProblemAdminItem:
 
 @router.get("/problems")
 def list_all_problems(
-  page: int = 1,
-  page_size: int = 20,
+  page: int = Query(default=1, ge=1),
+  page_size: int = Query(default=20, ge=1, le=100),
   session: Session = Depends(get_session),
   _: User = Depends(require_admin),
 ) -> ProblemAdminListResponse:
@@ -178,8 +178,8 @@ def delete_problem(
 
 @router.get("/users")
 def list_users(
-  page: int = 1,
-  page_size: int = 20,
+  page: int = Query(default=1, ge=1),
+  page_size: int = Query(default=20, ge=1, le=100),
   session: Session = Depends(get_session),
   _: User = Depends(require_admin),
 ) -> UserAdminListResponse:
@@ -322,8 +322,8 @@ def list_all_submissions(
   username: str | None = None,
   problem_slug: str | None = None,
   is_correct: bool | None = None,
-  page: int = 1,
-  page_size: int = 20,
+  page: int = Query(default=1, ge=1),
+  page_size: int = Query(default=20, ge=1, le=100),
   session: Session = Depends(get_session),
   _: User = Depends(require_admin),
 ) -> SubmissionAdminListResponse:

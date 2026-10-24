@@ -1,9 +1,10 @@
 import { useNavigate, useParams } from '@solidjs/router'
 import { Effect } from 'effect'
-import { createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js'
+import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js'
 import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
+import { findName, inferName } from '../lib/identity'
 import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../types'
 
 type Feedback = { kind: 'ok' | 'error' | 'info'; text: string; detail?: string }
@@ -55,9 +56,9 @@ const labelOf = (problem: ProblemDetail): string => {
 const prefixOf = (problem: ProblemDetail): string => {
   switch (problem.problem_type) {
     case 'infer_type':
-      return 'f ::'
+      return `${inferName()} ::`
     case 'find_function':
-      return 'target = '
+      return `${findName()} =`
     default:
       return ''
   }
@@ -112,9 +113,14 @@ export const Quiz = (): JSX.Element => {
     .then(setList)
     .catch(() => setList([]))
 
-  Effect.runPromise(Effect.sync(() => params.id))
-    .then((slug) => (slug === undefined ? navigate('/') : load(slug)))
-    .catch(() => navigate('/'))
+  createEffect(() => {
+    const slug = params.id
+    if (!slug) {
+      navigate('/')
+    } else {
+      load(slug)
+    }
+  })
 
   const goPrev = (): void => {
     const slug = problem()?.slug
@@ -224,8 +230,9 @@ export const Quiz = (): JSX.Element => {
 
   const codeOf = (p: ProblemDetail): string => {
     const d = p.display
-    if (isText(d) || isChoice(d)) return d.code
-    return ''
+    let code = ''
+    if (isText(d) || isChoice(d)) code = d.code
+    return code.replace(/\{\{INFER_TYPE_NAME\}\}/g, inferName()).replace(/\{\{FIND_FUNCTION_NAME\}\}/g, findName())
   }
 
   const progressText = (): string => {
@@ -261,7 +268,10 @@ export const Quiz = (): JSX.Element => {
         return (
           <Frame title="Quiz">
             <div class="page-header items-baseline">
-              <span class="page-title text-xl md:text-2xl">{headerOf(p)}</span>
+              <div class="flex flex-col gap-1">
+                <span class="page-title text-xl md:text-2xl">{p.title}</span>
+                <span class="text-xs text-soft font-semibold">{headerOf(p)}</span>
+              </div>
               <div class="flex items-center gap-2">
                 <button type="button" class="btn-xs btn-muted" title="Previous Problem (Ctrl/Alt + ←)" onClick={goPrev}>
                   ← Prev
@@ -274,6 +284,30 @@ export const Quiz = (): JSX.Element => {
                 </button>
               </div>
             </div>
+
+            {/* Categories & Remark */}
+            <Show when={(p.category && p.category.length > 0) || p.remark}>
+              <div class="flex flex-col gap-2 w-full max-w-200 mx-auto mb-4">
+                <Show when={p.category && p.category.length > 0}>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <For each={p.category}>
+                      {(cat) => (
+                        <span class="px-2 py-0.5 text-[0.65rem] font-mono text-dim border border-sep bg-row rounded">
+                          #{cat}
+                        </span>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+
+                <Show when={p.remark}>
+                  <div class="p-2.5 bg-field/60 border border-sep border-l-2 border-l-accent/80 text-xs text-text2 leading-relaxed whitespace-pre-wrap rounded-r">
+                    <span class="text-accent font-semibold mr-1.5">💡 Note:</span>
+                    {p.remark}
+                  </div>
+                </Show>
+              </div>
+            </Show>
 
             <div class={areaCls}>
               <span class={labelCls}>{labelOf(p)}</span>

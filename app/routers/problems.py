@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, col, func, select
 
 from app.auth.dependencies import get_current_user_optional
@@ -12,8 +12,8 @@ router = APIRouter(prefix="/problems", tags=["problems"])
 
 @router.get("/")
 def list_problems(
-  page: int = 1,
-  page_size: int = 20,
+  page: int = Query(default=1, ge=1),
+  page_size: int = Query(default=20, ge=1, le=1000),
   search: str | None = None,
   problem_types: str | None = None,
   session: Session = Depends(get_session),

@@ -14,12 +14,23 @@ def _sanitize(output: str, tmpdir: str) -> str:
 
 
 def _ensure_module_header(source: str) -> str:
-  for line in source.splitlines():
+  lines = source.splitlines()
+  insert_idx = 0
+  for i, line in enumerate(lines):
     stripped = line.strip()
-    if stripped == "" or stripped.startswith("--"):
+    if stripped.startswith("module "):
+      return source
+    if (
+      stripped == ""
+      or stripped.startswith("--")
+      or (stripped.startswith("{-#") and stripped.endswith("#-}"))
+    ):
+      insert_idx = i + 1
       continue
-    return source if stripped.startswith("module ") else f"module Judge where\n{source}"
-  return f"module Judge where\n{source}"
+    break
+
+  lines.insert(insert_idx, "module Judge where")
+  return "\n".join(lines)
 
 
 def ghc_typecheck(source: str) -> str | None:

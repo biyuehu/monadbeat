@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlmodel import Session, col, func, select
 
 from app.auth.dependencies import get_current_user, require_not_banned
@@ -24,8 +24,8 @@ router = APIRouter(prefix="/submissions", tags=["submissions"])
 @router.get("/")
 def list_submissions(
   problem_slug: str | None = None,
-  page: int = 1,
-  page_size: int = 20,
+  page: int = Query(default=1, ge=1),
+  page_size: int = Query(default=20, ge=1, le=100),
   user: User = Depends(get_current_user),
   session: Session = Depends(get_session),
 ) -> SubmissionListResponse:

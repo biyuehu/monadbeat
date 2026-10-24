@@ -5,6 +5,7 @@ import { fetchAllProblems, fetchProgress } from '../api'
 import { Frame } from '../components/Frame'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
+import { findName, inferName, setFindName, setInferName } from '../lib/identity'
 import { applyTheme, theme } from '../lib/theme'
 import type { ProblemListItem, ProgressItem } from '../types'
 
@@ -19,6 +20,13 @@ const navItems: { key: View; icon: string; label: string; needAuth: boolean }[] 
 ]
 
 const stars = (difficulty: number): string => Array.from({ length: 5 }, (_, i) => (i < difficulty ? '★' : '☆')).join('')
+
+const formatDate = (iso: string | undefined): string => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 
 const roleColor = (role: string | undefined): string => {
   if (role === 'superadmin') return 'var(--role-super)'
@@ -189,7 +197,7 @@ export const Profile = (): JSX.Element => {
                 <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Username</div>
                 <div class="px-3 py-2.5 bg-row text-soft break-all">{auth.user?.username}</div>
                 <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Joined</div>
-                <div class="px-3 py-2.5 bg-row text-fg break-all">{auth.user?.created_at}</div>
+                <div class="px-3 py-2.5 bg-row text-fg break-all">{formatDate(auth.user?.created_at)}</div>
                 <div class="px-3 py-2.5 bg-row tracking-wide text-muted">Role</div>
                 <div class="px-3 py-2.5 bg-row font-semibold" style={{ color: roleColor(auth.user?.role) }}>
                   {auth.user?.role ?? 'user'}
@@ -276,37 +284,77 @@ export const Profile = (): JSX.Element => {
           </Show>
 
           <Show when={view() === 'theme'}>
-            <ViewHeader title="Appearance" sub="Appearance" />
-            <div class="flex flex-col gap-3">
-              <div class="section-label">Theme Mode</div>
-              <div class="flex flex-wrap gap-2.5">
-                <For each={['light', 'dark'] as const}>
-                  {(mode) => (
-                    <button
-                      type="button"
-                      class={`flex flex-col gap-2 flex-[1_1_150px] max-w-55 max-[420px]:max-w-full p-3.5 pb-3 text-left text-[0.75rem] tracking-wide font-[inherit] cursor-pointer border transition-colors hover:border-brand ${
-                        theme() === mode
-                          ? 'border-accent bg-brand-tint text-strong'
-                          : 'border-field-line bg-row text-nav hover:text-nav-hover'
-                      }`}
-                      onClick={() => applyTheme(mode)}
-                    >
-                      <span
-                        class={`flex h-13.5 items-center justify-center border text-[1.1rem] font-bold tracking-wide ${
-                          mode === 'light'
-                            ? 'bg-[#f5f3fa] text-[#4b3a70] border-[#d8d0e8]'
-                            : 'bg-[#0a0a0a] text-soft border-[#3a2d55]'
+            <ViewHeader title="Appearance & Preferences" sub="Appearance & Preferences" />
+            <div class="flex flex-col gap-6">
+              <div class="flex flex-col gap-3">
+                <div class="section-label">Theme Mode</div>
+                <div class="flex flex-wrap gap-2.5">
+                  <For each={['light', 'dark'] as const}>
+                    {(mode) => (
+                      <button
+                        type="button"
+                        class={`flex flex-col gap-2 flex-[1_1_150px] max-w-55 max-[420px]:max-w-full p-3.5 pb-3 text-left text-[0.75rem] tracking-wide font-[inherit] cursor-pointer border transition-colors hover:border-brand ${
+                          theme() === mode
+                            ? 'border-accent bg-brand-tint text-strong'
+                            : 'border-field-line bg-row text-nav hover:text-nav-hover'
                         }`}
+                        onClick={() => applyTheme(mode)}
                       >
-                        λ
-                      </span>
-                      <span class="font-semibold">{mode === 'light' ? 'Light' : 'Dark'}</span>
-                      <span class="text-[0.58rem] tracking-wide text-dim">
-                        {mode === 'light' ? 'Light background · dark text' : 'Dark background · light text'}
-                      </span>
-                    </button>
-                  )}
-                </For>
+                        <span
+                          class={`flex h-13.5 items-center justify-center border text-[1.1rem] font-bold tracking-wide ${
+                            mode === 'light'
+                              ? 'bg-[#f5f3fa] text-[#4b3a70] border-[#d8d0e8]'
+                              : 'bg-[#0a0a0a] text-soft border-[#3a2d55]'
+                          }`}
+                        >
+                          λ
+                        </span>
+                        <span class="font-semibold">{mode === 'light' ? 'Light' : 'Dark'}</span>
+                        <span class="text-[0.58rem] tracking-wide text-dim">
+                          {mode === 'light' ? 'Light background · dark text' : 'Dark background · light text'}
+                        </span>
+                      </button>
+                    )}
+                  </For>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3 pt-4 border-t border-sep">
+                <div class="section-label">Quiz Function Identity</div>
+                <p class="text-[0.75rem] text-muted leading-relaxed">
+                  Customize the function name rendered in quizzes. Purely aesthetic and decoupled from backend
+                  evaluation.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="flex flex-col gap-1.5">
+                    <label for="infer-name-input" class="text-[0.7rem] uppercase tracking-wider text-dim">
+                      Infer Type Name (default: f)
+                    </label>
+                    <input
+                      id="infer-name-input"
+                      type="text"
+                      class="px-3 py-2 bg-panel border border-field-line text-[0.8rem] text-fg font-mono focus:border-accent focus:outline-none"
+                      value={inferName()}
+                      onInput={(e) => setInferName(e.currentTarget.value)}
+                      placeholder="f"
+                    />
+                    <span class="text-[0.65rem] text-dim font-mono">renders as: {inferName()} :: ...</span>
+                  </div>
+                  <div class="flex flex-col gap-1.5">
+                    <label for="find-name-input" class="text-[0.7rem] uppercase tracking-wider text-dim">
+                      Find Function Name (default: target)
+                    </label>
+                    <input
+                      id="find-name-input"
+                      type="text"
+                      class="px-3 py-2 bg-panel border border-field-line text-[0.8rem] text-fg font-mono focus:border-accent focus:outline-none"
+                      value={findName()}
+                      onInput={(e) => setFindName(e.currentTarget.value)}
+                      placeholder="target"
+                    />
+                    <span class="text-[0.65rem] text-dim font-mono">renders as: {findName()} = ...</span>
+                  </div>
+                </div>
               </div>
             </div>
           </Show>
