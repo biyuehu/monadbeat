@@ -24,7 +24,6 @@ from app.dtos.admin import (
   UserAdminItem,
   UserAdminListResponse,
 )
-from app.dtos.problem import ProblemDetailResponse
 from app.models.ban import Ban
 from app.models.problem import Problem
 from app.models.submission import Submission
@@ -101,7 +100,7 @@ def create_problem(
   body: ProblemCreate,
   session: Session = Depends(get_session),
   _: User = Depends(require_admin),
-) -> ProblemDetailResponse:
+) -> ProblemAdminDetail:
   exists = session.exec(select(Problem).where(Problem.slug == body.slug)).first()
   if exists is not None:
     raise HTTPException(status_code=409, detail="slug already exists")
@@ -118,7 +117,15 @@ def create_problem(
   session.add(problem)
   session.commit()
   session.refresh(problem)
-  return problem.to_detail_response()
+  return ProblemAdminDetail(
+    slug=problem.slug,
+    title=problem.title,
+    difficulty=problem.difficulty,
+    category=problem.category,
+    remark=problem.remark,
+    is_published=problem.is_published,
+    judge_config=problem.judge_config,
+  )
 
 
 @router.put("/problems/{slug}")
@@ -127,29 +134,40 @@ def update_problem(
   body: ProblemUpdate,
   session: Session = Depends(get_session),
   _: User = Depends(require_admin),
-) -> ProblemDetailResponse:
+) -> ProblemAdminDetail:
   problem = session.exec(select(Problem).where(Problem.slug == slug)).first()
   if problem is None:
     raise HTTPException(status_code=404, detail="Problem not found")
 
-  if body.judge_config is not None:
+  # Use model_fields_set to accurately distinguish omitted fields from explicit None/empty values
+  fields_set = body.model_fields_set
+
+  if "judge_config" in fields_set and body.judge_config is not None:
     problem.judge_config_raw = body.judge_config.model_dump()
     problem.problem_type = body.judge_config.problem_type
-  if body.title is not None:
+  if "title" in fields_set and body.title is not None:
     problem.title = body.title
-  if body.difficulty is not None:
+  if "difficulty" in fields_set and body.difficulty is not None:
     problem.difficulty = body.difficulty
-  if body.category is not None:
+  if "category" in fields_set and body.category is not None:
     problem.category = body.category
-  if body.remark is not None:
+  if "remark" in fields_set:
     problem.remark = body.remark
-  if body.is_published is not None:
+  if "is_published" in fields_set and body.is_published is not None:
     problem.is_published = body.is_published
 
   session.add(problem)
   session.commit()
   session.refresh(problem)
-  return problem.to_detail_response()
+  return ProblemAdminDetail(
+    slug=problem.slug,
+    title=problem.title,
+    difficulty=problem.difficulty,
+    category=problem.category,
+    remark=problem.remark,
+    is_published=problem.is_published,
+    judge_config=problem.judge_config,
+  )
 
 
 @router.delete("/problems/{slug}")
@@ -162,16 +180,14 @@ def delete_problem(
   if problem is None:
     raise HTTPException(status_code=404, detail="Problem not found")
   assert problem.id is not None
-  count = session.exec(
-    select(func.count())
-    .select_from(Submission)
-    .where(Submission.problem_id == problem.id)
-  ).one()
-  if count > 0:
-    raise HTTPException(
-      status_code=409,
-      detail=f"Cannot delete: {count} submission(s) reference this problem",
-    )
+
+  # Delete all associated submissions before deleting the problem
+  submissions = session.exec(
+    select(Submission).where(Submission.problem_id == problem.id)
+  ).all()
+  for sub in submissions:
+    session.delete(sub)
+
   session.delete(problem)
   session.commit()
 

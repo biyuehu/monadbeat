@@ -1,9 +1,11 @@
 import { type JSX, Show } from 'solid-js'
-import { StatusFilterLabel, StatusFilterOrder, useFilter } from '../context/filter'
+import { DifficultyList, StatusFilterLabel, StatusFilterOrder, useFilter } from '../context/filter'
 import { ProblemTypeLabel, ProblemTypeOrder } from '../types'
 
+const stars = (n: number): string => '★'.repeat(n) + '☆'.repeat(5 - n)
+
 export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.Element => {
-  const { state, setType, setStatus, reset } = useFilter()
+  const { state, setType, setStatus, setDifficulty, reset } = useFilter()
 
   return (
     <Show when={props.open}>
@@ -15,7 +17,7 @@ export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.
           onClick={() => props.onClose()}
         />
         <div
-          class="relative flex flex-col w-full max-w-105 max-h-[82vh] bg-panel border border-line text-fg shadow-[0_0_44px_var(--glow)]"
+          class="relative flex flex-col w-full max-w-105 max-h-[85vh] bg-panel border border-line text-fg shadow-[0_0_44px_var(--glow)]"
           role="dialog"
           aria-modal="true"
           aria-labelledby="filterPanelTitle"
@@ -67,6 +69,27 @@ export const FilterPanel = (props: { open: boolean; onClose: () => void }): JSX.
                     />
                     <span class="flex-1 text-[0.8rem] text-text2">{ProblemTypeLabel[key]}</span>
                     <span class="text-[0.58rem] whitespace-nowrap text-dim">{key}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Difficulty Filter */}
+            <div>
+              <div class="section-label mb-2">Difficulty (难度星级)</div>
+              <div class="flex flex-col gap-1">
+                {DifficultyList.map((level) => (
+                  <label class="flex items-center gap-2.5 px-2.5 py-2 border border-sep bg-row cursor-pointer select-none transition-colors hover:bg-brand-tint hover:border-hov">
+                    <input
+                      type="checkbox"
+                      class="m-0 size-[15px] shrink-0 cursor-pointer accent-brand"
+                      checked={state.difficulties[level]}
+                      onChange={(e) => setDifficulty(level, e.currentTarget.checked)}
+                    />
+                    <span class="flex-1 text-[0.8rem] font-mono text-dim tracking-wider">{stars(level)}</span>
+                    <span class="text-[0.62rem] text-dim">
+                      {level} Star{level > 1 ? 's' : ''}
+                    </span>
                   </label>
                 ))}
               </div>

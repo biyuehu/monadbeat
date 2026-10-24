@@ -50,15 +50,17 @@ export const Problems = (): JSX.Element => {
   const [page, setPage] = createSignal(1)
   const pageSize = 15
 
-  // Cache pages keyed by `${search}::${activeTypes}::${page}`
+  // Cache pages keyed by `${search}::${activeTypes}::${activeDifficulties}::${page}`
   const pageCache = new Map<string, { items: readonly ProblemListItem[]; total: number }>()
 
   const activeTypes = (): string[] => ProblemTypeOrder.filter((t) => filter.types[t as ProblemType])
+  const activeDifficulties = (): number[] => [1, 2, 3, 4, 5].filter((d) => filter.difficulties[d])
 
   const loadProblems = (p: number): void => {
     const s = search().trim()
     const types = activeTypes()
-    const cacheKey = `${s}::${types.join(',')}::${p}`
+    const diffs = activeDifficulties()
+    const cacheKey = `${s}::${types.join(',')}::${diffs.join(',')}::${p}`
 
     if (pageCache.has(cacheKey)) {
       const cached = pageCache.get(cacheKey)!
@@ -69,7 +71,7 @@ export const Problems = (): JSX.Element => {
     }
 
     setLoading(true)
-    Effect.runPromise(fetchProblems(p, pageSize, s, types))
+    Effect.runPromise(fetchProblems(p, pageSize, s, types, diffs))
       .then((res) => {
         pageCache.set(cacheKey, { items: res.items, total: res.total })
         setItems(res.items)
@@ -83,6 +85,7 @@ export const Problems = (): JSX.Element => {
     // When search or filter changes, reset to page 1
     search()
     activeTypes()
+    activeDifficulties()
     setPage(1)
   })
 

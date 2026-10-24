@@ -136,6 +136,9 @@ export const ProblemFormModal = (props: Props): JSX.Element => {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean)
+      const trimmedRemark = cur.remark.trim()
+      const remarkVal = trimmedRemark === '' ? null : trimmedRemark
+
       if (isEdit() && props.slug) {
         await Effect.runPromise(
           adminUpdateProblem(
@@ -144,7 +147,7 @@ export const ProblemFormModal = (props: Props): JSX.Element => {
               title: cur.title,
               difficulty: cur.difficulty,
               category: cats,
-              remark: cur.remark || undefined,
+              remark: remarkVal,
               is_published: cur.is_published,
               judge_config: jc
             },
@@ -159,7 +162,7 @@ export const ProblemFormModal = (props: Props): JSX.Element => {
               title: cur.title,
               difficulty: cur.difficulty,
               category: cats,
-              remark: cur.remark || undefined,
+              remark: remarkVal,
               is_published: cur.is_published,
               judge_config: jc
             } as ProblemCreate,

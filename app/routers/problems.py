@@ -16,17 +16,32 @@ def list_problems(
   page_size: int = Query(default=20, ge=1, le=1000),
   search: str | None = None,
   problem_types: str | None = None,
+  difficulties: str | None = None,
   session: Session = Depends(get_session),
 ) -> ProblemListResponse:
   base_query = select(Problem).where(Problem.is_published == True)
 
   if search:
-    base_query = base_query.where(col(Problem.title).ilike(f"%{search.strip()}%"))
+    s = search.strip()
+    pattern = f"%{s}%"
+    base_query = base_query.where(
+      col(Problem.title).ilike(pattern)
+      | func.array_to_string(Problem.category, ",").ilike(pattern)
+    )
 
   if problem_types:
     types = [t.strip() for t in problem_types.split(",") if t.strip()]
     if types:
       base_query = base_query.where(col(Problem.problem_type).in_(types))
+
+  if difficulties:
+    diff_nums: list[int] = []
+    for d in difficulties.split(","):
+      d = d.strip()
+      if d.isdigit():
+        diff_nums.append(int(d))
+    if diff_nums:
+      base_query = base_query.where(col(Problem.difficulty).in_(diff_nums))
 
   total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
 

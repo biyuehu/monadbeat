@@ -76,7 +76,8 @@ export const fetchProblems = (
   page = 1,
   pageSize = 20,
   search?: string,
-  types?: string[]
+  types?: string[],
+  difficulties?: number[]
 ): Effect.Effect<ProblemListResponse, ApiError | Error> => {
   const params = new URLSearchParams({
     page: String(page),
@@ -87,6 +88,9 @@ export const fetchProblems = (
   }
   if (types && types.length > 0) {
     params.set('problem_types', types.join(','))
+  }
+  if (difficulties && difficulties.length > 0) {
+    params.set('difficulties', difficulties.join(','))
   }
   return fetchJson<ProblemListResponse>(`/problems/?${params.toString()}`)
 }
