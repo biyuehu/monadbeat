@@ -224,7 +224,10 @@ export const Quiz = (): JSX.Element => {
           })
         }
       })
-      .catch((err) => setFeedback({ kind: 'error', text: `❌ ${String(err)}` }))
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        setFeedback({ kind: 'error', text: `❌ ${msg}` })
+      })
       .finally(() => setSubmitting(false))
   }
 
@@ -395,6 +398,22 @@ export const Quiz = (): JSX.Element => {
                     <pre class="mt-2 p-2.5 bg-black/40 border border-sep rounded text-xs font-mono text-fg overflow-x-auto whitespace-pre-wrap">
                       {fb().detail}
                     </pre>
+                    <Show when={fb().detail?.includes('Not in scope: type variable')}>
+                      <div class="mt-2 p-2 bg-brand-bg border border-accent/40 rounded text-xs text-soft flex items-start gap-1.5 leading-relaxed">
+                        <span class="text-accent shrink-0">💡 Note:</span>
+                        <span>
+                          In standalone type signatures, all type variables must be explicitly quantified with{' '}
+                          <code class="px-1 py-0.5 bg-black/50 border border-sep rounded font-mono text-fg">
+                            forall
+                          </code>{' '}
+                          (e.g.{' '}
+                          <code class="px-1 py-0.5 bg-black/50 border border-sep rounded font-mono text-fg">
+                            forall a. a -&gt; a
+                          </code>
+                          ).
+                        </span>
+                      </div>
+                    </Show>
                   </Show>
                 </div>
               )}

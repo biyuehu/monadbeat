@@ -321,48 +321,6 @@ export const Profile = (): JSX.Element => {
 
               <div class="flex flex-col gap-3 pt-4 border-t border-sep">
                 <div class="section-label">Quiz Function Identity</div>
-                <p class="text-[0.75rem] text-muted leading-relaxed">
-                  Customize the function name rendered in quizzes. Purely aesthetic and decoupled from backend
-                  evaluation.
-                </p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="flex flex-col gap-1.5">
-                    <label for="infer-name-input" class="text-[0.7rem] uppercase tracking-wider text-dim">
-                      Infer Type Name (default: f)
-                    </label>
-                    <input
-                      id="infer-name-input"
-                      type="text"
-                      class="px-3 py-2 bg-panel border border-field-line text-[0.8rem] text-fg font-mono focus:border-accent focus:outline-none"
-                      value={inferName()}
-                      onInput={(e) => setInferName(e.currentTarget.value)}
-                      placeholder="f"
-                    />
-                    <span class="text-[0.65rem] text-dim font-mono">renders as: {inferName()} :: ...</span>
-                  </div>
-                  <div class="flex flex-col gap-1.5">
-                    <label for="find-name-input" class="text-[0.7rem] uppercase tracking-wider text-dim">
-                      Find Function Name (default: target)
-                    </label>
-                    <input
-                      id="find-name-input"
-                      type="text"
-                      class="px-3 py-2 bg-panel border border-field-line text-[0.8rem] text-fg font-mono focus:border-accent focus:outline-none"
-                      value={findName()}
-                      onInput={(e) => setFindName(e.currentTarget.value)}
-                      placeholder="target"
-                    />
-                    <span class="text-[0.65rem] text-dim font-mono">renders as: {findName()} = ...</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-col gap-3 pt-4 border-t border-sep">
-                <div class="section-label">Quiz Function Identity</div>
-                <p class="text-[0.75rem] text-muted leading-relaxed">
-                  Customize the function name rendered in quizzes. Purely aesthetic and decoupled from backend
-                  evaluation.
-                </p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="flex flex-col gap-1.5">
                     <label for="infer-name-input" class="text-[0.7rem] uppercase tracking-wider text-dim">

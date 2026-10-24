@@ -187,9 +187,14 @@ export const Problems = (): JSX.Element => {
       <div class="list-box flex-1 min-h-25 overflow-y-auto w-full max-w-200 mx-auto">
         <Show when={!loading()} fallback={<div class="status-text text-dim">⏳ Loading problems...</div>}>
           <Show when={!loading() && (total() === 0 || displayItems().length === 0)} fallback={null}>
-            <div class="empty-box flex-1">
-              <div class="empty-title">No matches</div>
-              <div class="empty-text">No problems match your filter or search.</div>
+            <div class="flex-1 flex flex-col items-center justify-center p-8 my-auto text-center">
+              <div class="flex size-12 items-center justify-center rounded-full border border-sep bg-panel2 text-xl text-dim mb-3 shadow-[0_0_16px_var(--glow-soft)]">
+                🔍
+              </div>
+              <div class="text-[0.95rem] font-bold tracking-wide text-soft mb-1">No problems found</div>
+              <p class="text-xs text-muted max-w-xs leading-relaxed">
+                No problems match your current search query or filter criteria.
+              </p>
             </div>
           </Show>
 
