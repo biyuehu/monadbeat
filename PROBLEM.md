@@ -4,26 +4,27 @@ find_function 只看类型(`undefined` 能过)、predict 选项少可被暴力�
 
 ## 判题层
 
-### J1 infer_type 答案可以直接填 `CorrectSig`
+### ~~J1 infer_type 答案可以直接填 `CorrectSig`~~ *(已解决)*
 
-答案被替换进 `type UserSig = {{USER_CODE}}`,而 `CorrectSig`、`check1`、`check2` 在同一个模块里。Haskell 顶层声明顺序无关,提交 `CorrectSig` 这个名字,`UserSig` 就等于标准答案,两个 check 恒成立。
-建议:判题时给脚手架里的标识符加每次随机的后缀。
+~~答案被替换进 `type UserSig = {{USER_CODE}}`,而 `CorrectSig`、`check1`、`check2` 在同一个模块里。Haskell 顶层声明顺序无关,提交 `CorrectSig` 这个名字,`UserSig` 就等于标准答案,两个 check 恒成立。~~
+> **解决记录**：在 `app/judge/dispatcher.py` 中，判题时对 `CorrectSig`、`TargetSig`、`check1`、`check2` 等内部标识符注入随机 token 后缀；直接提交内部名字会导致未定义报错，彻底杜绝作弊。
 
-### J2 判错详情可能泄漏正确类型
+### ~~J2 判错详情可能泄漏正确类型~~ *(已解决)*
 
-infer 判错时 `judge_detail` 是 GHC 原始输出,类型不匹配的报错通常带 Expected / Actual 的展开类型。
-建议:GHC 输出带 `Judge.hs:行:列`,答案所在行已知。错误落在答案行(语法错、`Not in scope: type variable`)时保留原文,落在 `check1`、`check2` 上时只返回"类型不等价"。forall 相关报错必须保留原文,否则 F1 的提示无从匹配。
+~~infer 判错时 `judge_detail` 是 GHC 原始输出,类型不匹配的报错通常带 Expected / Actual 的展开类型。~~
+> **解决记录**：判错脱敏过滤：保留用户代码语法错误与 `Not in scope: type variable`，对断言类型不匹配的行统一转为无泄漏的通用提示，并隐藏 `Actual` 真实目标类型与 `Probable cause`。
 
 ### ~~J3 `_ensure_module_header` 会破坏文件头 pragma~~ *(已解决)*
 
 ~~`app/judge/ghc_runner.py` 只跳过空行和 `--` 注释。scaffold 以 `{-# LANGUAGE ... #-}` 开头时,`module Judge where` 会插在 pragma 前面,pragma 失效。现在 infer 不需要扩展所以没触发,以后需要扩展的题会静默出错。~~
 > **解决记录**：已重构 `_ensure_module_header`，跳过开头连续的注释和 `{-# ... #-}` pragma 块后再插入 `module Judge where`。
 
-### J4 判题期间一直占着数据库连接,没有并发上限
+### ~~J4 判题期间一直占着数据库连接,没有并发上限~~ *(已解决)*
 
-`app/routers/submissions.py` 的 `submit` 是同步函数,session 贯穿整个请求。查完题目后事务已开,连接要到 `commit` 才归还,中间 GHC 最长跑 10 秒。连接池是 SQLAlchemy 默认值(5 加 10 溢出),十几个并发提交就会让其他接口排队。限流只按 IP,同时运行的 GHC 进程数没有上限,每个最多 512MB。
-<!-- 建议:全局 Semaphore 限制并发 GHC 数,满了返回 503;判题前读完题目就释放 session,判完再开新 session 写提交。 -->
-设置最大GHC并行数量 多了后让新请求排队
+~~`app/routers/submissions.py` 的 `submit` 是同步函数,session 贯穿整个请求。查完题目后事务已开,连接要到 `commit` 才归还,中间 GHC 最长跑 10 秒。连接池是 SQLAlchemy 默认值(5 加 10 溢出),十几个并发提交就会让其他接口排队。限流只按 IP,同时运行的 GHC 进程数没有上限,每个最多 512MB。~~
+> **解决记录**：
+> 1. 在 `app/config.py` 和 `app/judge/ghc_runner.py` 中引入 `max_concurrent_ghc`（默认 4）及全局 `BoundedSemaphore` 控制 GHC 并发数量；
+> 2. `submissions.py` 在查完题目后立即回滚/释放连接，GHC 判题完毕后再写入提交，彻底消除长连接占用。
 
 ### ~~J5 编辑题目后历史提交不重判~~ *(已解决)*
 

@@ -4,28 +4,13 @@ import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } f
 import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
+import { highlightHaskell } from '../lib/haskellHighlighter'
 import { findName, inferName } from '../lib/identity'
 import type { ChoiceDisplay, Display, ProblemDetail, ProblemListItem, TextDisplay } from '../types'
 
 type Feedback = { kind: 'ok' | 'error' | 'info'; text: string; detail?: string }
 
-const escapeHtml = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
-const highlight = (code: string): string => {
-  const tokens: string[] = []
-  const stash = (html: string): string => {
-    tokens.push(html)
-    return `\uE000${tokens.length - 1}\uE000`
-  }
-  const stashed = escapeHtml(code)
-    .replace(/(--.*)/g, (_, m: string) => stash(`<span class="text-dim italic">${m}</span>`))
-    .replace(/::/g, () => stash('<span class="text-accent">::</span>'))
-    .replace(/\b(import|qualified|as|instance|data|deriving|where|class|type)\b/g, (_, m: string) =>
-      stash(`<span class="text-brand font-semibold">${m}</span>`)
-    )
-    .replace(/\b([a-z][A-Za-z0-9_']*)\b(?=\s*[=(])/g, (_, m: string) => stash(`<span class="text-soft">${m}</span>`))
-  return stashed.replace(/\uE000(\d+)\uE000/g, (_, i: string) => tokens[Number(i)] ?? '')
-}
+const highlight = (code: string): string => highlightHaskell(code)
 
 const headerOf = (problem: ProblemDetail): string => {
   switch (problem.problem_type) {

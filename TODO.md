@@ -46,7 +46,7 @@
 - [x] `currentUser` / token are read from localStorage with a bare `as MeResponse` cast and no runtime validation; a stale cache from an older schema silently flows into the UI (the `role` rename hit this). Validate the stored shape and drop invalid cache.
 - [x] Token expiry is not checked client-side; the UI stays "signed in" until the first 401. Decode the JWT `exp` on write and treat expired tokens as signed out without firing a request.
 - [x] localStorage auth state is not synced across tabs; signing out in one tab leaves others showing the old `state`. Listen for the `storage` event and reconcile.
-- [ ] Haskell code highlight
+- [x] Haskell code highlight
 
 ## Meta
 

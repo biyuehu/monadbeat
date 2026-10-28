@@ -10,6 +10,7 @@ class Settings(BaseSettings):
   ghc_binary: str = "ghc"
   ghc_timeout_sec: int = 10
   ghc_memory_mb: int = 512
+  max_concurrent_ghc: int = 4
   max_answer_length: int = 4096
 
   submit_rate_limit: str = "10/minute"

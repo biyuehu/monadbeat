@@ -144,11 +144,20 @@ def submit(
   if problem is None or problem.id is None:
     raise HTTPException(status_code=404, detail="Problem not found")
 
-  result = judge(problem.judge_config, body.user_answer)
+  problem_id = problem.id
+  problem_slug = problem.slug
+  judge_config = problem.judge_config
   assert user.id is not None
+  user_id = user.id
+
+  # Rollback/close initial read transaction so GHC execution does not hold DB connection
+  session.rollback()
+
+  result = judge(judge_config, body.user_answer)
+
   submission = Submission(
-    user_id=user.id,
-    problem_id=problem.id,
+    user_id=user_id,
+    problem_id=problem_id,
     user_answer=body.user_answer,
     is_correct=result == Correct(),
     judge_detail=result.detail if isinstance(result, Wrong) else None,
@@ -160,7 +169,7 @@ def submit(
   assert submission.id is not None
   return SubmissionResponse(
     id=submission.id,
-    problem_slug=problem.slug,
+    problem_slug=problem_slug,
     is_correct=submission.is_correct,
     judge_detail=submission.judge_detail,
     submitted_at=submission.submitted_at,
