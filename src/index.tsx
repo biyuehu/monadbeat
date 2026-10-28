@@ -9,6 +9,10 @@ import { DialogProvider } from './context/dialog'
 import { FilterProvider } from './context/filter'
 
 const root = document.getElementById('root')
+const fallback = document.getElementById('app-fallback')
+if (fallback) {
+  fallback.remove()
+}
 
 render(
   () => (
