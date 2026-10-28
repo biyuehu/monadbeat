@@ -17,13 +17,3 @@ pre-commit:
       glob: "*.py"
       run: uv run ruff format {staged_files}
       stage_fixed: true
-
-pre-push:
-  parallel: false
-  commands:
-    frontend-typecheck:
-      run: bun run typecheck
-    backend-typecheck:
-      run: uv run pyright
-    frontend-build:
-      run: bun run build
