@@ -8,6 +8,7 @@ class Submission(SQLModel, table=True):
   __table_args__ = (
     Index("ix_submission_user_correct", "user_id", "is_correct"),
     Index("ix_submission_problem_correct", "problem_id", "is_correct"),
+    Index("ix_submission_user_submitted_at_id", "user_id", "submitted_at", "id"),
   )
 
   id: int | None = Field(default=None, primary_key=True)
