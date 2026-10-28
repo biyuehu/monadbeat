@@ -118,10 +118,16 @@ export const fetchMe = (token: string): Effect.Effect<MeResponse, ApiError | Err
 
 export const fetchSubmissions = (
   token: string,
-  page = 1,
-  pageSize = 20
-): Effect.Effect<SubmissionListResponse, ApiError | Error> =>
-  fetchJson<SubmissionListResponse>(`/submissions/?page=${page}&page_size=${pageSize}`, authInit(token))
+  cursor?: string | null,
+  limit = 20
+): Effect.Effect<SubmissionListResponse, ApiError | Error> => {
+  const params = new URLSearchParams()
+  if (cursor) {
+    params.set('cursor', cursor)
+  }
+  params.set('limit', String(limit))
+  return fetchJson<SubmissionListResponse>(`/submissions/?${params.toString()}`, authInit(token))
+}
 
 export const fetchProgress = (token: string): Effect.Effect<readonly ProgressItem[], ApiError | Error> =>
   fetchJson<{ items: ProgressItem[] }>('/submissions/progress', authInit(token)).pipe(Effect.map((r) => r.items))

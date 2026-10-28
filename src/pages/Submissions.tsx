@@ -3,7 +3,6 @@ import { Effect, flow } from 'effect'
 import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
 import { fetchSubmissions } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
-import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import type { SubmissionListItem } from '../types'
 
@@ -26,16 +25,17 @@ export const Submissions = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
   const [items, setItems] = createSignal<readonly SubmissionListItem[]>([])
-  const [total, setTotal] = createSignal(0)
   const [page, setPage] = createSignal(1)
+  const [hasMore, setHasMore] = createSignal(false)
   const pageSize = 15
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [filter, setFilter] = createSignal<Filter>('all')
   const [openId, setOpenId] = createSignal<number | null>(null)
 
-  // Cache pages so navigating back does not re-fetch
-  const pageCache = new Map<number, { items: readonly SubmissionListItem[]; total: number }>()
+  // Cache pages and cursors: page 1 cursor is null
+  const pageCursors = new Map<number, string | null>([[1, null]])
+  const pageCache = new Map<number, { items: readonly SubmissionListItem[]; hasMore: boolean }>()
 
   const loadPage = (p: number): void => {
     const token = auth.token
@@ -47,18 +47,22 @@ export const Submissions = (): JSX.Element => {
     if (pageCache.has(p)) {
       const cached = pageCache.get(p)!
       setItems(cached.items)
-      setTotal(cached.total)
+      setHasMore(cached.hasMore)
       setPage(p)
       return
     }
 
+    const cursor = pageCursors.get(p) ?? null
     setLoading(true)
-    Effect.runPromise(fetchSubmissions(token, p, pageSize))
+    Effect.runPromise(fetchSubmissions(token, cursor, pageSize))
       .then((res) => {
-        pageCache.set(p, { items: res.items, total: res.total })
+        if (res.next_cursor && !pageCursors.has(p + 1)) {
+          pageCursors.set(p + 1, res.next_cursor)
+        }
+        pageCache.set(p, { items: res.items, hasMore: res.has_more })
         setItems(res.items)
-        setTotal(res.total)
-        setPage(res.page)
+        setHasMore(res.has_more)
+        setPage(p)
       })
       .catch(flow(String, setError))
       .finally(() => setLoading(false))
@@ -219,11 +223,33 @@ export const Submissions = (): JSX.Element => {
         </Show>
       </div>
 
-      <Show when={total() > 0}>
-        <Pagination page={page()} pageSize={pageSize} total={total()} onPageChange={(p) => setPage(p)} />
+      <Show when={page() > 1 || hasMore()}>
+        <div class="flex items-center justify-between gap-3 pt-3 border-t border-sep text-xs text-dim shrink-0">
+          <div>
+            Page <span class="text-soft font-mono font-medium">{page()}</span>
+          </div>
+          <div class="flex items-center gap-1.5 font-mono">
+            <button
+              type="button"
+              class="btn-xs btn-muted disabled:opacity-30 disabled:cursor-not-allowed"
+              disabled={page() <= 1}
+              onClick={() => loadPage(page() - 1)}
+            >
+              &lt; Prev
+            </button>
+            <button
+              type="button"
+              class="btn-xs btn-muted disabled:opacity-30 disabled:cursor-not-allowed"
+              disabled={!hasMore()}
+              onClick={() => loadPage(page() + 1)}
+            >
+              Next &gt;
+            </button>
+          </div>
+        </div>
       </Show>
 
-      <FooterLine class="!mt-4" right={`${items().length} on page · ${total()} total submissions`} />
+      <FooterLine class="!mt-4" right={`${items().length} on page`} />
     </Frame>
   )
 }

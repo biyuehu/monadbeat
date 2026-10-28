@@ -4,7 +4,6 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.dtos.pagination import PaginatedResponse
 
 
 class SubmitRequest(BaseModel):
@@ -30,7 +29,15 @@ class SubmissionListItem(BaseModel):
   submitted_at: datetime
 
 
-SubmissionListResponse = PaginatedResponse[SubmissionListItem]
+class SubmissionCursorListResponse(BaseModel):
+  items: list[SubmissionListItem]
+  next_cursor: str | None = None
+  has_more: bool = False
+  total: int | None = None
+
+
+# Keep SubmissionListResponse for backwards compatibility
+SubmissionListResponse = SubmissionCursorListResponse
 
 
 class ProgressItem(BaseModel):

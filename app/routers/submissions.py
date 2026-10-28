@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+import base64
+import json
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, col, func, select
 
 from app.auth.dependencies import get_current_user, require_not_banned
@@ -21,11 +25,26 @@ from app.models.user import User
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 
+def _encode_cursor(submitted_at: datetime, submission_id: int) -> str:
+  payload = {"t": submitted_at.isoformat(), "id": submission_id}
+  return base64.urlsafe_b64encode(json.dumps(payload).encode("utf-8")).decode("ascii")
+
+
+def _decode_cursor(cursor: str) -> tuple[datetime, int]:
+  try:
+    payload = json.loads(base64.urlsafe_b64decode(cursor.encode("ascii")).decode("utf-8"))
+    return datetime.fromisoformat(payload["t"]), int(payload["id"])
+  except (ValueError, KeyError, TypeError):
+    raise HTTPException(status_code=400, detail="Invalid pagination cursor")
+
+
 @router.get("/")
 def list_submissions(
   problem_slug: str | None = None,
-  page: int = Query(default=1, ge=1),
-  page_size: int = Query(default=20, ge=1, le=100),
+  cursor: str | None = None,
+  limit: int = 20,
+  page: int | None = None,
+  page_size: int | None = None,
   user: User = Depends(get_current_user),
   session: Session = Depends(get_session),
 ) -> SubmissionListResponse:
@@ -33,7 +52,7 @@ def list_submissions(
     select(Submission, Problem.title, Problem.slug)
     .join(Problem)
     .where(Submission.user_id == user.id)
-    .order_by(col(Submission.submitted_at).desc())
+    .order_by(col(Submission.submitted_at).desc(), col(Submission.id).desc())
   )
 
   # For non-admin users, silently hide submissions for unpublished/draft problems
@@ -43,14 +62,17 @@ def list_submissions(
   if problem_slug is not None:
     base_query = base_query.where(Problem.slug == problem_slug)
 
-  total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+  effective_limit = page_size if page is not None and page_size is not None else limit
 
-  items = []
-  for submission, title, slug in session.exec(
-    base_query.offset((page - 1) * page_size).limit(page_size)
-  ).all():
-    assert submission.id is not None
-    items.append(
+  # Backward-compatible offset pagination when ?page= is explicitly provided and no ?cursor=
+  if page is not None and cursor is None:
+    total = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+    query = base_query.offset((page - 1) * effective_limit).limit(effective_limit + 1)
+    results = session.exec(query).all()
+    has_more = len(results) > effective_limit
+    page_results = results[:effective_limit]
+
+    items = [
       SubmissionListItem(
         id=submission.id,
         problem_slug=slug,
@@ -60,10 +82,63 @@ def list_submissions(
         judge_detail=submission.judge_detail,
         submitted_at=submission.submitted_at,
       )
+      for submission, title, slug in page_results
+      if submission.id is not None
+    ]
+
+    next_cursor = None
+    if has_more and page_results:
+      last_sub = page_results[-1][0]
+      if last_sub.id is not None:
+        next_cursor = _encode_cursor(last_sub.submitted_at, last_sub.id)
+
+    return SubmissionListResponse(
+      items=items,
+      next_cursor=next_cursor,
+      has_more=has_more,
+      total=total,
     )
 
+  # Cursor pagination on (submitted_at, id)
+  if cursor is not None:
+    cursor_time, cursor_id = _decode_cursor(cursor)
+    base_query = base_query.where(
+      (col(Submission.submitted_at) < cursor_time)
+      | (
+        (col(Submission.submitted_at) == cursor_time)
+        & (col(Submission.id) < cursor_id)
+      )
+    )
+
+  query = base_query.limit(effective_limit + 1)
+  results = session.exec(query).all()
+  has_more = len(results) > effective_limit
+  page_results = results[:effective_limit]
+
+  items = [
+    SubmissionListItem(
+      id=submission.id,
+      problem_slug=slug,
+      problem_title=title,
+      user_answer=submission.user_answer,
+      is_correct=submission.is_correct,
+      judge_detail=submission.judge_detail,
+      submitted_at=submission.submitted_at,
+    )
+    for submission, title, slug in page_results
+    if submission.id is not None
+  ]
+
+  next_cursor = None
+  if has_more and page_results:
+    last_sub = page_results[-1][0]
+    if last_sub.id is not None:
+      next_cursor = _encode_cursor(last_sub.submitted_at, last_sub.id)
+
   return SubmissionListResponse(
-    items=items, total=total, page=page, page_size=page_size
+    items=items,
+    next_cursor=next_cursor,
+    has_more=has_more,
   )
 
 
