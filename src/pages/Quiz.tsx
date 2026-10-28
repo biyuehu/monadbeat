@@ -3,6 +3,7 @@ import { Effect } from 'effect'
 import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js'
 import { fetchAllProblems, fetchProblemDetail, submitAnswer } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 import { useAuth } from '../context/auth'
 import { highlightHaskell } from '../lib/haskellHighlighter'
 import { findName, inferName } from '../lib/identity'
@@ -107,7 +108,14 @@ export const Quiz = (): JSX.Element => {
     }
   })
 
+  const isDraft = (): boolean => {
+    const p = problem()
+    if (!p) return false
+    return !p.is_published || list().findIndex((q) => q.slug === p.slug) === -1
+  }
+
   const goPrev = (): void => {
+    if (isDraft()) return
     const slug = problem()?.slug
     if (slug === undefined) return
     const idx = list().findIndex((p) => p.slug === slug)
@@ -117,6 +125,7 @@ export const Quiz = (): JSX.Element => {
   }
 
   const goNext = (): void => {
+    if (isDraft()) return
     const slug = problem()?.slug
     if (slug === undefined) return
     const idx = list().findIndex((p) => p.slug === slug)
@@ -148,10 +157,10 @@ export const Quiz = (): JSX.Element => {
     if (!inInput) {
       if (p.problem_type === 'predict_behavior') {
         const key = e.key.toUpperCase()
-        if (key >= 'A' && key <= 'D') {
+        if (key.length === 1 && key >= 'A' && key <= 'Z') {
           const idx = key.charCodeAt(0) - 65
           const optsCount = isChoice(p.display) ? p.display.options.length : 0
-          if (idx < optsCount) {
+          if (idx >= 0 && idx < optsCount) {
             e.preventDefault()
             setSelected(idx)
           }
@@ -199,8 +208,12 @@ export const Quiz = (): JSX.Element => {
     Effect.runPromise(submitAnswer(p.slug, userAnswer, token))
       .then((res) => {
         if (res.is_correct) {
-          setFeedback({ kind: 'ok', text: '✅ Correct! Moving on to next problem...' })
-          setTimeout(goNext, 800)
+          if (isDraft()) {
+            setFeedback({ kind: 'ok', text: '✅ Correct! (Draft preview passed)' })
+          } else {
+            setFeedback({ kind: 'ok', text: '✅ Correct! Moving on to next problem...' })
+            setTimeout(goNext, 800)
+          }
         } else {
           setFeedback({
             kind: 'error',
@@ -236,7 +249,10 @@ export const Quiz = (): JSX.Element => {
       when={problem() !== null}
       fallback={
         <Frame title="Quiz">
-          <Show when={!loading() && loadError()} fallback={<div class="status-text text-dim">Loading...</div>}>
+          <Show
+            when={!loading() && loadError()}
+            fallback={<LoadingIndicator text="Loading problem..." class="py-20" />}
+          >
             <div class="flex flex-col items-center justify-center py-12 gap-4 text-center">
               <div class="text-3xl">⚠️</div>
               <div class="text-lg font-semibold text-soft">Problem Not Available</div>
@@ -261,15 +277,29 @@ export const Quiz = (): JSX.Element => {
                 <span class="text-xs text-soft font-semibold">{headerOf(p)}</span>
               </div>
               <div class="flex items-center gap-2">
-                <button type="button" class="btn-xs btn-muted" title="Previous Problem (Ctrl/Alt + ←)" onClick={goPrev}>
-                  ← Prev
-                </button>
-                <span class="px-3 py-0.5 text-xs tracking-wide text-soft border border-edge bg-brand-bg">
-                  {progressText()}
-                </span>
-                <button type="button" class="btn-xs btn-muted" title="Next Problem (Ctrl/Alt + →)" onClick={goNext}>
-                  Next →
-                </button>
+                <Show
+                  when={!isDraft()}
+                  fallback={
+                    <span class="px-3 py-1 text-xs font-mono font-semibold text-warn border border-warn/40 bg-warn-bg rounded">
+                      🛠️ Draft Preview
+                    </span>
+                  }
+                >
+                  <button
+                    type="button"
+                    class="btn-xs btn-muted"
+                    title="Previous Problem (Ctrl/Alt + ←)"
+                    onClick={goPrev}
+                  >
+                    ← Prev
+                  </button>
+                  <span class="px-3 py-0.5 text-xs tracking-wide text-soft border border-edge bg-brand-bg">
+                    {progressText()}
+                  </span>
+                  <button type="button" class="btn-xs btn-muted" title="Next Problem (Ctrl/Alt + →)" onClick={goNext}>
+                    Next →
+                  </button>
+                </Show>
               </div>
             </div>
 

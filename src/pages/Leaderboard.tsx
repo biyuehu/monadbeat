@@ -2,6 +2,7 @@ import { Effect, flow } from 'effect'
 import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
 import { fetchLeaderboard, type LeaderboardTimeframe } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import type { LeaderboardItem } from '../types'
@@ -84,7 +85,7 @@ export const Leaderboard = (): JSX.Element => {
           <Show
             when={entries().length > 0}
             fallback={
-              <Show when={!loading()} fallback={<div class="status-text text-dim">Loading...</div>}>
+              <Show when={!loading()} fallback={<LoadingIndicator text="Loading rankings..." class="py-16" />}>
                 <div class="empty-box flex-1">
                   <div class="empty-title">No players yet</div>
                   <div class="empty-text">Solve a problem to get on the board.</div>

@@ -4,6 +4,7 @@ import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
 import { fetchProblems, fetchProgress } from '../api'
 import { FilterPanel } from '../components/FilterPanel'
 import { FooterLine, Frame } from '../components/Frame'
+import { LoadingIndicator } from '../components/LoadingIndicator'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
@@ -185,7 +186,7 @@ export const Problems = (): JSX.Element => {
       </div>
 
       <div class="list-box flex-1 min-h-25 overflow-y-auto w-full max-w-200 mx-auto">
-        <Show when={!loading()} fallback={<div class="status-text text-dim">⏳ Loading problems...</div>}>
+        <Show when={!loading()} fallback={<LoadingIndicator text="Loading problems..." class="py-16" />}>
           <Show when={!loading() && (total() === 0 || displayItems().length === 0)} fallback={null}>
             <div class="flex-1 flex flex-col items-center justify-center p-8 my-auto text-center">
               <div class="flex size-12 items-center justify-center rounded-full border border-sep bg-panel2 text-xl text-dim mb-3 shadow-[0_0_16px_var(--glow-soft)]">
