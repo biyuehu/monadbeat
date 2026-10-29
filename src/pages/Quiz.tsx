@@ -73,6 +73,49 @@ export const Quiz = (): JSX.Element => {
   const [selected, setSelected] = createSignal(-1)
   const [feedback, setFeedback] = createSignal<Feedback | null>(null)
   const [submitting, setSubmitting] = createSignal(false)
+  const [cooldownSeconds, setCooldownSeconds] = createSignal(0)
+  const [shuffledIndices, setShuffledIndices] = createSignal<number[]>([])
+
+  let cooldownTimer: ReturnType<typeof setInterval> | null = null
+
+  const startCooldown = (seconds: number): void => {
+    if (cooldownTimer) clearInterval(cooldownTimer)
+    setCooldownSeconds(seconds)
+    cooldownTimer = setInterval(() => {
+      setCooldownSeconds((prev) => {
+        if (prev <= 1) {
+          if (cooldownTimer) clearInterval(cooldownTimer)
+          cooldownTimer = null
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  onCleanup(() => {
+    if (cooldownTimer) clearInterval(cooldownTimer)
+  })
+
+  // Fisher-Yates shuffle generator
+  const shuffle = (n: number): number[] => {
+    const arr = Array.from({ length: n }, (_, i) => i)
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      const tmp = arr[i]
+      arr[i] = arr[j]
+      arr[j] = tmp
+    }
+    return arr
+  }
+
+  const shuffleChoices = (p: ProblemDetail | null): void => {
+    if (p && isChoice(p.display)) {
+      setShuffledIndices(shuffle(p.display.options.length))
+    } else {
+      setShuffledIndices([])
+    }
+  }
 
   const [loading, setLoading] = createSignal(true)
   const [loadError, setLoadError] = createSignal<string | null>(null)
@@ -87,6 +130,7 @@ export const Quiz = (): JSX.Element => {
     Effect.runPromise(fetchProblemDetail(slug, auth.token))
       .then((p) => {
         setProblem(p)
+        shuffleChoices(p)
       })
       .catch((e) => {
         const msg = e instanceof Error ? e.message : String(e)
@@ -203,7 +247,10 @@ export const Quiz = (): JSX.Element => {
       return
     }
 
-    const userAnswer = p.problem_type === 'predict_behavior' ? String(selected()) : answer()
+    const userAnswer =
+      p.problem_type === 'predict_behavior'
+        ? String(shuffledIndices().length > 0 && selected() >= 0 ? shuffledIndices()[selected()] : selected())
+        : answer()
     setSubmitting(true)
     Effect.runPromise(submitAnswer(p.slug, userAnswer, token))
       .then((res) => {
@@ -220,10 +267,22 @@ export const Quiz = (): JSX.Element => {
             text: '❌ Incorrect answer',
             detail: res.judge_detail ?? undefined
           })
+          if (p.problem_type === 'predict_behavior') {
+            shuffleChoices(p)
+            setSelected(-1)
+          }
         }
       })
       .catch((err) => {
         const msg = err instanceof Error ? err.message : String(err)
+        // Detect 429 cooldown message and parse seconds if present
+        const match = msg.match(/wait\s+(\d+)s/i)
+        if (match) {
+          const s = parseInt(match[1], 10)
+          if (!Number.isNaN(s) && s > 0) {
+            startCooldown(s)
+          }
+        }
         setFeedback({ kind: 'error', text: `❌ ${msg}` })
       })
       .finally(() => setSubmitting(false))
@@ -341,7 +400,17 @@ export const Quiz = (): JSX.Element => {
                 <div class={areaCls}>
                   <span class={labelCls}>Choose one option:</span>
                   <div class="flex flex-col gap-1">
-                    <For each={isChoice(p.display) ? p.display.options : []}>
+                    <For
+                      each={
+                        isChoice(p.display)
+                          ? shuffledIndices().length === p.display.options.length
+                            ? shuffledIndices().map((origIdx) =>
+                                isChoice(p.display) ? p.display.options[origIdx] : ''
+                              )
+                            : p.display.options
+                          : []
+                      }
+                    >
                       {(opt, i) => (
                         <button
                           type="button"
@@ -396,10 +465,20 @@ export const Quiz = (): JSX.Element => {
                 type="button"
                 class="btn max-md:flex-1 px-[22px] py-2 text-[0.72rem]"
                 onClick={submit}
-                disabled={submitting() || auth.user?.is_banned}
-                title={auth.user?.is_banned ? 'Submissions disabled: Account banned' : undefined}
+                disabled={submitting() || auth.user?.is_banned || cooldownSeconds() > 0}
+                title={
+                  auth.user?.is_banned
+                    ? 'Submissions disabled: Account banned'
+                    : cooldownSeconds() > 0
+                      ? `Cooldown active: wait ${cooldownSeconds()}s`
+                      : undefined
+                }
               >
-                {auth.user?.is_banned ? '🚫 Banned' : '✓ Submit'}
+                {auth.user?.is_banned
+                  ? '🚫 Banned'
+                  : cooldownSeconds() > 0
+                    ? `⏳ Wait ${cooldownSeconds()}s`
+                    : '✓ Submit'}
               </button>
             </div>
 

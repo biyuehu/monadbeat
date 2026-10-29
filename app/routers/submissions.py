@@ -1,6 +1,7 @@
 import base64
 import json
-from datetime import datetime
+import math
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, col, func, select
@@ -225,6 +226,41 @@ def submit(
   judge_config = problem.judge_config
   assert user.id is not None
   user_id = user.id
+
+  # Cooldown check for predict_behavior to prevent brute-forcing
+  if judge_config.problem_type == "predict_behavior":
+    recent_submissions = session.exec(
+      select(Submission)
+      .where(Submission.user_id == user_id, Submission.problem_id == problem_id)
+      .order_by(col(Submission.submitted_at).desc(), col(Submission.id).desc())
+      .limit(5)
+    ).all()
+
+    # Count consecutive wrong attempts from the most recent one
+    consecutive_wrongs = 0
+    for sub in recent_submissions:
+      if sub.is_correct:
+        break
+      consecutive_wrongs += 1
+
+    if consecutive_wrongs > 0 and recent_submissions:
+      last_sub = recent_submissions[0]
+      # 1 wrong: 5s, 2 wrongs: 15s, 3+ wrongs: 30s
+      cooldown_seconds = (
+        5 if consecutive_wrongs == 1 else (15 if consecutive_wrongs == 2 else 30)
+      )
+      now_time = datetime.now(UTC).astimezone().replace(tzinfo=None)
+      last_time = last_sub.submitted_at
+      if last_time.tzinfo is not None:
+        last_time = last_time.replace(tzinfo=None)
+      elapsed = (now_time - last_time).total_seconds()
+      remaining = cooldown_seconds - elapsed
+      if remaining > 0:
+        session.rollback()
+        raise HTTPException(
+          status_code=429,
+          detail=f"Cooldown active: please wait {math.ceil(remaining)}s before trying this question again.",
+        )
 
   # Rollback/close initial read transaction so GHC execution does not hold DB connection
   session.rollback()
