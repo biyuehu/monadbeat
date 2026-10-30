@@ -19,11 +19,11 @@ app/                 FastAPI backend
   routers/           auth, problems, submissions, leaderboard, user
   services/          leaderboard aggregation, scoring
 src/                 Solid frontend
-  lib/               api, generated types, storage, theme
-  context/           auth, filter
-  components/        headbar, filter panel, route title
-  routes/            problems, quiz, account, leaderboard, profile, auth callback
-  styles/            per-page css
+  api/               api clients (frontend & admin)
+  components/        headbar, frame, loading, pagination
+  context/           auth context
+  lib/               identity, highlighter
+  pages/             problems, quiz, leaderboard, profile, submissions, admin
 public/              static assets (avatars, favicon)
 scripts/             dev tooling (openapi export)
 ```
