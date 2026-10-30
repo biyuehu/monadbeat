@@ -23,8 +23,16 @@ class FindFunctionConfig(BaseModel):
 class PredictBehaviorConfig(BaseModel):
   problem_type: Literal["predict_behavior"] = "predict_behavior"
   display_code: str
-  options: list[str]
+  options: list[str] = Field(min_length=3, max_length=7)
   correct_index: int
+
+  @model_validator(mode="after")
+  def validate_correct_index(self) -> "PredictBehaviorConfig":
+    if not (0 <= self.correct_index < len(self.options)):
+      raise ValueError(
+        f"correct_index ({self.correct_index}) must be between 0 and {len(self.options) - 1}"
+      )
+    return self
 
 
 # class SatisfyLawConfig(BaseModel):

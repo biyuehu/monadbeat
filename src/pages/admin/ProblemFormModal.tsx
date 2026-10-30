@@ -131,6 +131,23 @@ export const ProblemFormModal = (props: Props): JSX.Element => {
     setErr(null)
     try {
       const cur = f()
+      if (cur.problem_type === 'predict_behavior') {
+        const opts = cur.options
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean)
+        if (opts.length < 3 || opts.length > 7) {
+          setErr(`predict_behavior must have 3 to 7 options (currently ${opts.length})`)
+          setSaving(false)
+          return
+        }
+        const idx = Number(cur.correct_index)
+        if (Number.isNaN(idx) || idx < 0 || idx >= opts.length) {
+          setErr(`Correct Option Index must be between 0 and ${opts.length - 1}`)
+          setSaving(false)
+          return
+        }
+      }
       const jc = buildJudgeConfig(cur)
       const cats = cur.category
         .split(',')
@@ -259,10 +276,22 @@ export const ProblemFormModal = (props: Props): JSX.Element => {
             {/* Type-specific fields */}
             <Show when={f().problem_type === 'infer_type' || f().problem_type === 'find_function'}>
               <Field label="Scaffold (Haskell, fed to GHC)" required>
-                {textarea(f().scaffold, (v) => set('scaffold', v), '-- Haskell code…', 5)}
+                {textarea(f().scaffold, (v) => set('scaffold', v), '-- Haskell scaffold code…', 5)}
               </Field>
-              <Field label="Display Snippet (shown to user)" required>
-                {textarea(f().display_snippet, (v) => set('display_snippet', v), '-- Displayed code…', 5)}
+              <Field
+                label={
+                  f().problem_type === 'infer_type'
+                    ? 'Display Snippet (RHS expression, e.g. Map.filterWithKey)'
+                    : 'Display Snippet (target type signature, e.g. [Int] -> [Int])'
+                }
+                required
+              >
+                {textarea(
+                  f().display_snippet,
+                  (v) => set('display_snippet', v),
+                  f().problem_type === 'infer_type' ? 'Map.filterWithKey' : '[Int] -> [Int]',
+                  4
+                )}
               </Field>
             </Show>
 
@@ -270,8 +299,8 @@ export const ProblemFormModal = (props: Props): JSX.Element => {
               <Field label="Display Code (shown to user)" required>
                 {textarea(f().display_code, (v) => set('display_code', v), '-- Code to evaluate…', 5)}
               </Field>
-              <Field label="Options (one per line)" required>
-                {textarea(f().options, (v) => set('options', v), 'Option A\nOption B\n…', 3)}
+              <Field label="Options (one per line, 3 to 7 options)" required>
+                {textarea(f().options, (v) => set('options', v), 'Option A\nOption B\nOption C\n…', 4)}
               </Field>
               <Field label="Correct Option Index (0-based)" required>
                 <input
