@@ -292,7 +292,31 @@ export const Quiz = (): JSX.Element => {
     const d = p.display
     let code = ''
     if (isText(d) || isChoice(d)) code = d.code
-    return code.replace(/\{\{INFER_TYPE_NAME\}\}/g, inferName()).replace(/\{\{FIND_FUNCTION_NAME\}\}/g, findName())
+
+    // If display code still contains legacy {{...}} placeholders, substitute them
+    code = code.replace(/\{\{INFER_TYPE_NAME\}\}/g, inferName()).replace(/\{\{FIND_FUNCTION_NAME\}\}/g, findName())
+
+    if (p.problem_type === 'infer_type') {
+      // Auto-prefix `f = ` if snippet is purely the RHS (doesn't already bind the function)
+      const trimmed = code.trim()
+      const alreadyBound =
+        trimmed.startsWith(`${inferName()} =`) ||
+        trimmed.startsWith(`${inferName()} `) ||
+        /^[a-zA-Z0-9_']+\s*(=|::)/.test(trimmed)
+      return alreadyBound ? code : `${inferName()} = ${code}`
+    }
+
+    if (p.problem_type === 'find_function') {
+      // Auto-prefix `target :: ` if snippet is purely the target type signature
+      const trimmed = code.trim()
+      const alreadyBound =
+        trimmed.startsWith(`${findName()} ::`) ||
+        trimmed.startsWith(`${findName()} `) ||
+        /^[a-zA-Z0-9_']+\s*::/.test(trimmed)
+      return alreadyBound ? code : `${findName()} :: ${code}`
+    }
+
+    return code
   }
 
   const progressText = (): string => {

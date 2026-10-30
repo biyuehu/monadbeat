@@ -9,7 +9,7 @@ const readStored = (key: string, fallback: string): string => {
 }
 
 export const [inferName, setInferNameSignal] = createSignal<string>(readStored(INFER_NAME_KEY, 'f'))
-export const [findName, setFindNameSignal] = createSignal<string>(readStored(FIND_NAME_KEY, 'target'))
+export const [findName, setFindNameSignal] = createSignal<string>(readStored(FIND_NAME_KEY, 'g'))
 
 export const setInferName = (name: string): void => {
   const sanitized = name.trim() || 'f'
@@ -18,7 +18,7 @@ export const setInferName = (name: string): void => {
 }
 
 export const setFindName = (name: string): void => {
-  const sanitized = name.trim() || 'target'
+  const sanitized = name.trim() || 'g'
   setFindNameSignal(sanitized)
   localStorage.setItem(FIND_NAME_KEY, sanitized)
 }

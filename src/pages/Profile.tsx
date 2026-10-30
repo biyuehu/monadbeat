@@ -336,7 +336,7 @@ export const Profile = (): JSX.Element => {
                   </div>
                   <div class="flex flex-col gap-1.5">
                     <label for="find-name-input" class="text-[0.7rem] uppercase tracking-wider text-dim">
-                      Find Function Name (default: target)
+                      Find Function Name (default: g)
                     </label>
                     <input
                       id="find-name-input"
@@ -344,7 +344,7 @@ export const Profile = (): JSX.Element => {
                       class="px-3 py-2 bg-panel border border-field-line text-[0.8rem] text-fg font-mono focus:border-accent focus:outline-none"
                       value={findName()}
                       onInput={(e) => setFindName(e.currentTarget.value)}
-                      placeholder="target"
+                      placeholder="g"
                     />
                     <span class="text-[0.65rem] text-dim font-mono">renders as: {findName()} = ...</span>
                   </div>

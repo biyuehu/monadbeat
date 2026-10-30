@@ -7,7 +7,7 @@ VALUES (
   ARRAY['Data.Map', 'higher-order'],
   NULL,
   true,
-  '{"problem_type":"infer_type","scaffold":"import qualified Data.Map as Map\nf = {{USER_CODE}}","display_snippet":"f = Map.filterWithKey"}'
+  '{"problem_type":"infer_type","scaffold":"import qualified Data.Map as Map\nf = {{USER_CODE}}","display_snippet":"Map.filterWithKey"}'
 );
 
 INSERT INTO problem (slug, title, difficulty, problem_type, category, remark, is_published, judge_config)
@@ -19,7 +19,7 @@ VALUES (
   ARRAY['Data.List', 'sorting'],
   NULL,
   true,
-  '{"problem_type":"find_function","scaffold":"import Data.List (sortOn)\ntarget :: [Int] -> [Int]\ntarget = {{USER_CODE}}","display_snippet":"target :: [Int] -> [Int]"}'
+  '{"problem_type":"find_function","scaffold":"import Data.List (sortOn)\ntarget :: [Int] -> [Int]\ntarget = {{USER_CODE}}","display_snippet":"[Int] -> [Int]"}'
 );
 
 INSERT INTO problem (slug, title, difficulty, problem_type, category, remark, is_published, judge_config)
