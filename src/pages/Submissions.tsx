@@ -1,9 +1,10 @@
 import { A, useNavigate } from '@solidjs/router'
 import { Effect, flow } from 'effect'
-import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js'
 import { fetchSubmissions } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { useAuth } from '../context/auth'
+import { isInputElement } from '../lib/shortcuts'
 import type { SubmissionListItem } from '../types'
 
 type Filter = 'all' | 'correct' | 'wrong'
@@ -32,6 +33,7 @@ export const Submissions = (): JSX.Element => {
   const [error, setError] = createSignal<string | null>(null)
   const [filter, setFilter] = createSignal<Filter>('all')
   const [openId, setOpenId] = createSignal<number | null>(null)
+  const [selectedIndex, setSelectedIndex] = createSignal(0)
 
   // Cache pages and cursors: page 1 cursor is null
   const pageCursors = new Map<number, string | null>([[1, null]])
@@ -77,6 +79,84 @@ export const Submissions = (): JSX.Element => {
 
   const countOf = (key: Filter): number =>
     key === 'all' ? items().length : items().filter((i) => (key === 'correct') === i.is_correct).length
+
+  const handleKeyDown = (e: KeyboardEvent): void => {
+    if (isInputElement(e.target)) return
+    const list = visible()
+    const maxIdx = Math.max(0, list.length - 1)
+
+    // J / Down: select next
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedIndex((prev) => Math.min(prev + 1, maxIdx))
+      return
+    }
+
+    // K / Up: select prev
+    if (e.key === 'k' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedIndex((prev) => Math.max(prev - 1, 0))
+      return
+    }
+
+    // Enter / Space: toggle open detail
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (list.length > 0 && selectedIndex() < list.length) {
+        e.preventDefault()
+        const targetId = list[selectedIndex()].id
+        setOpenId((prev) => (prev === targetId ? null : targetId))
+      }
+      return
+    }
+
+    // V: view problem / retry
+    if (e.key === 'v') {
+      if (list.length > 0 && selectedIndex() < list.length) {
+        e.preventDefault()
+        navigate(`/quiz/${list[selectedIndex()].problem_slug}`)
+      }
+      return
+    }
+
+    // F: cycle filter tab (all -> correct -> wrong)
+    if (e.key === 'f') {
+      e.preventDefault()
+      const filterKeys: Filter[] = ['all', 'correct', 'wrong']
+      const curIdx = filterKeys.indexOf(filter())
+      const nextKey = filterKeys[(curIdx + 1) % filterKeys.length]
+      setFilter(nextKey)
+      setSelectedIndex(0)
+      return
+    }
+
+    // [ / H: previous page
+    if (e.key === '[' || e.key === 'h') {
+      if (page() > 1) {
+        e.preventDefault()
+        loadPage(page() - 1)
+        setSelectedIndex(0)
+      }
+      return
+    }
+
+    // ] / L: next page
+    if (e.key === ']' || e.key === 'l') {
+      if (hasMore()) {
+        e.preventDefault()
+        loadPage(page() + 1)
+        setSelectedIndex(0)
+      }
+      return
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener('keydown', handleKeyDown)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+  })
 
   return (
     <Frame title="Submissions">
@@ -140,17 +220,25 @@ export const Submissions = (): JSX.Element => {
                 }
               >
                 <For each={visible()}>
-                  {(item) => {
+                  {(item, idx) => {
                     const open = (): boolean => openId() === item.id
+                    const isSelected = (): boolean => selectedIndex() === idx()
                     return (
                       <div class="shrink-0">
                         <button
                           type="button"
                           class={`group list-row w-full min-w-0 gap-2 md:gap-3 px-2.5 py-2 md:px-3.5 md:py-2.5 text-left font-[inherit] cursor-pointer border-y-0 border-r-0 hover:bg-hl hover:border-l-hl-line ${
-                            open() ? 'bg-brand-tint border-l-accent' : 'bg-row'
+                            open()
+                              ? 'bg-brand-tint border-l-accent'
+                              : isSelected()
+                                ? 'bg-sel border-l-accent'
+                                : 'bg-row'
                           }`}
                           aria-expanded={open()}
-                          onClick={() => setOpenId(open() ? null : item.id)}
+                          onClick={() => {
+                            setSelectedIndex(idx())
+                            setOpenId(open() ? null : item.id)
+                          }}
                         >
                           <span
                             class={`w-6 shrink-0 text-center text-base ${item.is_correct ? 'text-ok' : 'text-err'}`}

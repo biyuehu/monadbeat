@@ -1,6 +1,6 @@
 import { useNavigate } from '@solidjs/router'
 import { Effect, flow } from 'effect'
-import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js'
 import { fetchProblems, fetchProgress } from '../api'
 import { FilterPanel } from '../components/FilterPanel'
 import { FooterLine, Frame } from '../components/Frame'
@@ -8,6 +8,7 @@ import { LoadingIndicator } from '../components/LoadingIndicator'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
+import { isInputElement } from '../lib/shortcuts'
 import {
   isProblemType,
   type ProblemListItem,
@@ -40,7 +41,7 @@ const statusTitle = (status: Status, attempts: number): string => {
 export const Problems = (): JSX.Element => {
   const navigate = useNavigate()
   const { state: auth } = useAuth()
-  const { state: filter, isFiltering } = useFilter()
+  const { state: filter, isFiltering, setDifficulty, setType } = useFilter()
   const [items, setItems] = createSignal<readonly ProblemListItem[]>([])
   const [total, setTotal] = createSignal(0)
   const [progress, setProgress] = createSignal<ReadonlyMap<string, ProgressItem>>(new Map())
@@ -49,7 +50,10 @@ export const Problems = (): JSX.Element => {
   const [filterOpen, setFilterOpen] = createSignal(false)
   const [search, setSearch] = createSignal('')
   const [page, setPage] = createSignal(1)
+  const [selectedIndex, setSelectedIndex] = createSignal(0)
   const pageSize = 15
+
+  let searchInputRef: HTMLInputElement | undefined
 
   // Cache pages keyed by `${search}::${activeTypes}::${activeDifficulties}::${page}`
   const pageCache = new Map<string, { items: readonly ProblemListItem[]; total: number }>()
@@ -125,6 +129,103 @@ export const Problems = (): JSX.Element => {
     return `${total()} problems`
   }
 
+  const totalPages = (): number => Math.max(1, Math.ceil(total() / pageSize))
+
+  // Keyboard navigation for Problems list
+  const handleKeyDown = (e: KeyboardEvent): void => {
+    if (isInputElement(e.target)) return
+    if (filterOpen()) return
+
+    const list = displayItems()
+    const maxIdx = Math.max(0, list.length - 1)
+
+    // J / Down: select next
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedIndex((prev) => Math.min(prev + 1, maxIdx))
+      return
+    }
+
+    // K / Up: select prev
+    if (e.key === 'k' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedIndex((prev) => Math.max(prev - 1, 0))
+      return
+    }
+
+    // Enter / O: open selected problem
+    if (e.key === 'Enter' || e.key === 'o') {
+      if (list.length > 0 && selectedIndex() < list.length) {
+        e.preventDefault()
+        navigate(`/quiz/${list[selectedIndex()].slug}`)
+      }
+      return
+    }
+
+    // [ / H: previous page
+    if (e.key === '[' || e.key === 'h') {
+      if (page() > 1) {
+        e.preventDefault()
+        setPage(page() - 1)
+        setSelectedIndex(0)
+      }
+      return
+    }
+
+    // ] / L: next page
+    if (e.key === ']' || e.key === 'l') {
+      if (page() < totalPages()) {
+        e.preventDefault()
+        setPage(page() + 1)
+        setSelectedIndex(0)
+      }
+      return
+    }
+
+    // / : focus search
+    if (e.key === '/') {
+      e.preventDefault()
+      searchInputRef?.focus()
+      return
+    }
+
+    // 1..5: toggle difficulty filter
+    if (['1', '2', '3', '4', '5'].includes(e.key)) {
+      e.preventDefault()
+      const diff = parseInt(e.key, 10)
+      setDifficulty(diff, !filter.difficulties[diff])
+      return
+    }
+
+    // T: cycle problem type filter
+    if (e.key === 't' || e.key === 'T') {
+      e.preventDefault()
+      const allActive = ProblemTypeOrder.every((t) => filter.types[t])
+      if (allActive) {
+        for (const t of ProblemTypeOrder) setType(t, t === 'infer_type')
+      } else {
+        const activeIdx = ProblemTypeOrder.findIndex((t) => filter.types[t])
+        const nextIdx = (activeIdx + 1) % (ProblemTypeOrder.length + 1)
+        if (nextIdx === ProblemTypeOrder.length) {
+          for (const t of ProblemTypeOrder) setType(t, true)
+        } else {
+          for (let i = 0; i < ProblemTypeOrder.length; i++) {
+            setType(ProblemTypeOrder[i], i === nextIdx)
+          }
+        }
+      }
+      return
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener('keydown', handleKeyDown)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+  })
+
   return (
     <Frame title="Monad Beat">
       <div class="page-header items-center">
@@ -155,11 +256,22 @@ export const Problems = (): JSX.Element => {
               <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
             </svg>
             <input
+              ref={searchInputRef}
               type="text"
               class="flex-1 min-w-0 px-1 text-[0.85rem] bg-transparent border-0 outline-none text-fg placeholder:text-dim"
-              placeholder="FINDING WHAT"
+              placeholder="Search problems ( / to focus )"
               value={search()}
               onInput={(e) => setSearch(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const list = displayItems()
+                  if (list.length > 0) {
+                    navigate(`/quiz/${list[0].slug}`)
+                  }
+                } else if (e.key === 'Escape') {
+                  searchInputRef?.blur()
+                }
+              }}
             />
             <button type="button" class="btn h-6 shrink-0 px-3.5 text-[0.62rem] whitespace-nowrap">
               Search
@@ -200,13 +312,19 @@ export const Problems = (): JSX.Element => {
           </Show>
 
           <For each={displayItems()}>
-            {(problem) => {
+            {(problem, idx) => {
               const st = (): { status: Status; attempts: number } => statusOf(problem.slug)
+              const isSelected = (): boolean => selectedIndex() === idx()
               return (
                 <button
                   type="button"
-                  class="group list-row min-w-0 shrink-0 gap-2 md:gap-3 px-2.5 py-2 md:px-3.5 md:py-2.5 bg-row text-left font-[inherit] cursor-pointer border-y-0 border-r-0 hover:bg-hl hover:border-l-hl-line"
-                  onClick={() => navigate(`/quiz/${problem.slug}`)}
+                  class={`group list-row min-w-0 shrink-0 gap-2 md:gap-3 px-2.5 py-2 md:px-3.5 md:py-2.5 text-left font-[inherit] cursor-pointer border-y-0 border-r-0 hover:bg-hl hover:border-l-hl-line ${
+                    isSelected() ? 'bg-sel border-l-accent' : 'bg-row'
+                  }`}
+                  onClick={() => {
+                    setSelectedIndex(idx())
+                    navigate(`/quiz/${problem.slug}`)
+                  }}
                 >
                   <span class="w-6 shrink-0 text-center text-base">{statusStyle[st().status].icon}</span>
                   <span

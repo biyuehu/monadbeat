@@ -1,6 +1,8 @@
 import { Route, Router } from '@solidjs/router'
 import type { JSX } from 'solid-js'
 import { Headbar } from './components/Headbar'
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
+import { useGlobalShortcuts } from './lib/shortcuts'
 import { AuthCallback } from './pages/AuthCallback'
 import { Admin } from './pages/admin/Admin'
 import { Leaderboard } from './pages/Leaderboard'
@@ -10,15 +12,19 @@ import { Profile } from './pages/Profile'
 import { Quiz } from './pages/Quiz'
 import { Submissions } from './pages/Submissions'
 
+const AppRoot = (props: { children?: JSX.Element }): JSX.Element => {
+  useGlobalShortcuts()
+  return (
+    <>
+      <Headbar />
+      {props.children}
+      <KeyboardShortcutsModal />
+    </>
+  )
+}
+
 export const App = (): JSX.Element => (
-  <Router
-    root={(props: { children?: JSX.Element }): JSX.Element => (
-      <>
-        <Headbar />
-        {props.children}
-      </>
-    )}
-  >
+  <Router root={AppRoot}>
     <Route path="/" component={Problems} />
     <Route path="/quiz/:id" component={Quiz} />
     <Route path="/auth/callback" component={AuthCallback} />

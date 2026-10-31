@@ -120,6 +120,8 @@ export const Quiz = (): JSX.Element => {
   const [loading, setLoading] = createSignal(true)
   const [loadError, setLoadError] = createSignal<string | null>(null)
 
+  let codeInputRef: HTMLInputElement | undefined
+
   const load = (slug: string): void => {
     setLoading(true)
     setLoadError(null)
@@ -198,7 +200,20 @@ export const Quiz = (): JSX.Element => {
       return
     }
 
+    if (e.key === 'r' && (e.altKey || e.ctrlKey)) {
+      e.preventDefault()
+      reset()
+      return
+    }
+
     if (!inInput) {
+      // 'i' or 'e' focuses code input
+      if ((e.key === 'i' || e.key === 'e') && p.problem_type !== 'predict_behavior') {
+        e.preventDefault()
+        codeInputRef?.focus()
+        return
+      }
+
       if (p.problem_type === 'predict_behavior') {
         const key = e.key.toUpperCase()
         if (key.length === 1 && key >= 'A' && key <= 'Z') {
@@ -211,10 +226,10 @@ export const Quiz = (): JSX.Element => {
         }
       }
 
-      if (e.key === 'ArrowRight' && (e.altKey || e.ctrlKey)) {
+      if ((e.key === 'ArrowRight' && (e.altKey || e.ctrlKey)) || e.key === ']') {
         e.preventDefault()
         goNext()
-      } else if (e.key === 'ArrowLeft' && (e.altKey || e.ctrlKey)) {
+      } else if ((e.key === 'ArrowLeft' && (e.altKey || e.ctrlKey)) || e.key === '[') {
         e.preventDefault()
         goPrev()
       }
@@ -293,27 +308,12 @@ export const Quiz = (): JSX.Element => {
     let code = ''
     if (isText(d) || isChoice(d)) code = d.code
 
-    // If display code still contains legacy {{...}} placeholders, substitute them
-    code = code.replace(/\{\{INFER_TYPE_NAME\}\}/g, inferName()).replace(/\{\{FIND_FUNCTION_NAME\}\}/g, findName())
-
     if (p.problem_type === 'infer_type') {
-      // Auto-prefix `f = ` if snippet is purely the RHS (doesn't already bind the function)
-      const trimmed = code.trim()
-      const alreadyBound =
-        trimmed.startsWith(`${inferName()} =`) ||
-        trimmed.startsWith(`${inferName()} `) ||
-        /^[a-zA-Z0-9_']+\s*(=|::)/.test(trimmed)
-      return alreadyBound ? code : `${inferName()} = ${code}`
+      return `${inferName()} = ${code}`
     }
 
     if (p.problem_type === 'find_function') {
-      // Auto-prefix `target :: ` if snippet is purely the target type signature
-      const trimmed = code.trim()
-      const alreadyBound =
-        trimmed.startsWith(`${findName()} ::`) ||
-        trimmed.startsWith(`${findName()} `) ||
-        /^[a-zA-Z0-9_']+\s*::/.test(trimmed)
-      return alreadyBound ? code : `${findName()} :: ${code}`
+      return `${findName()} :: ${code}`
     }
 
     return code
@@ -463,6 +463,7 @@ export const Quiz = (): JSX.Element => {
                 <div class="flex items-center px-3 max-md:px-2.5 bg-field border border-field-line transition-[border-color,box-shadow] focus-within:border-brand focus-within:shadow-[0_0_0_2px_var(--glow-soft)]">
                   <span class="shrink-0 py-2.5 pr-1.5 text-[0.85rem] whitespace-nowrap text-soft">{prefixOf(p)}</span>
                   <input
+                    ref={codeInputRef}
                     type="text"
                     class="flex-1 min-w-0 py-2.5 text-[0.85rem] font-[inherit] bg-transparent border-0 outline-none text-fg"
                     value={answer()}
@@ -474,6 +475,8 @@ export const Quiz = (): JSX.Element => {
                       if (e.key === 'Enter') {
                         e.preventDefault()
                         submit()
+                      } else if (e.key === 'Escape') {
+                        codeInputRef?.blur()
                       }
                     }}
                   />

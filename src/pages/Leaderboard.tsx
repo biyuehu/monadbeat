@@ -1,10 +1,11 @@
 import { Effect, flow } from 'effect'
-import { createEffect, createSignal, For, type JSX, Show } from 'solid-js'
+import { createEffect, createSignal, For, type JSX, onCleanup, onMount, Show } from 'solid-js'
 import { fetchLeaderboard, type LeaderboardTimeframe } from '../api'
 import { FooterLine, Frame } from '../components/Frame'
 import { LoadingIndicator } from '../components/LoadingIndicator'
 import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/auth'
+import { isInputElement } from '../lib/shortcuts'
 import type { LeaderboardItem } from '../types'
 
 const rankColor = (rank: number): string => {
@@ -47,6 +48,55 @@ export const Leaderboard = (): JSX.Element => {
   }
 
   const isMe = (entry: LeaderboardItem): boolean => auth.user !== null && auth.user.username === entry.username
+
+  const totalPages = (): number => Math.max(1, Math.ceil(entries().length / pageSize))
+
+  const handleKeyDown = (e: KeyboardEvent): void => {
+    if (isInputElement(e.target)) return
+
+    // W: week, M: month, A: all-time
+    if (e.key === 'w' || e.key === 'W') {
+      e.preventDefault()
+      setTimeframe('week')
+      return
+    }
+    if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault()
+      setTimeframe('month')
+      return
+    }
+    if (e.key === 'a' || e.key === 'A') {
+      e.preventDefault()
+      setTimeframe('all')
+      return
+    }
+
+    // [ / H: prev page
+    if (e.key === '[' || e.key === 'h') {
+      if (page() > 1) {
+        e.preventDefault()
+        setPage(page() - 1)
+      }
+      return
+    }
+
+    // ] / L: next page
+    if (e.key === ']' || e.key === 'l') {
+      if (page() < totalPages()) {
+        e.preventDefault()
+        setPage(page() + 1)
+      }
+      return
+    }
+  }
+
+  onMount(() => {
+    window.addEventListener('keydown', handleKeyDown)
+  })
+
+  onCleanup(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+  })
 
   return (
     <Frame title="Leaderboard">
