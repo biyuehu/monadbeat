@@ -1,32 +1,52 @@
 # MonadBeat
 
+[![CI](https://github.com/biyuehu/monadbeat/actions/workflows/ci.yml/badge.svg)](https://github.com/biyuehu/monadbeat/actions/workflows/ci.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![SolidJS](https://img.shields.io/badge/SolidJS-1.9+-2c4f7c?logo=solid&logoColor=white)](https://www.solidjs.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![GHC](https://img.shields.io/badge/GHC-9.6+-5e5086?logo=haskell&logoColor=white)](https://www.haskell.org/ghc/)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL3.0-yellow.svg)](LICENSE)
+
 A Haskell practice platform. Answer type-signature, implementation, and behavior questions; get judged by GHC; climb the leaderboard.
 
-## Stack
+## Architecture
 
-- **Backend** — FastAPI + SQLModel + PostgreSQL (psycopg) · GitHub OAuth + JWT · slowapi rate limiting
-- **Judge** — GHC type checking in a temp sandbox (`-fno-code`) for `infer_type` / `find_function`; in-process for `predict_behavior`
-- **Frontend** — SolidJS + Vite + TypeScript · Effect for async and error handling · Biome for lint/format · types generated from the backend OpenAPI schema
+```mermaid
+flowchart TD
+    subgraph Client["Frontend (SolidJS + TypeScript + Effect)"]
+        UI["Web SPA Pages<br/>(Problems / Quiz / Leaderboard / Submissions)"]
+        Shortcuts["Keyboard Navigation Engine<br/>(Vim-style sequences & single-keys)"]
+        ApiClient["Type-safe API Client<br/>(Generated from OpenAPI)"]
+    end
 
-## Layout
+    subgraph Backend["Backend API (FastAPI + SQLModel)"]
+        Router["API Routers<br/>(auth, problems, submissions, leaderboard, admin)"]
+        Auth["Auth & Security<br/>(GitHub OAuth, JWT, slowapi rate limiter)"]
+        JudgeDisp["Judge Dispatcher<br/>(infer_type / find_function / predict_behavior)"]
+        DBAccess["Database Layer (SQLModel / SQLAlchemy)"]
+    end
 
-```txt
-app/                 FastAPI backend
-  auth/              github oauth, jwt, dependencies
-  dtos/              pydantic request/response models
-  judge/             ghc runner, judge dispatcher
-  models/            sqlmodel tables
-  routers/           auth, problems, submissions, leaderboard, user
-  services/          leaderboard aggregation, scoring
-src/                 Solid frontend
-  api/               api clients (frontend & admin)
-  components/        headbar, frame, loading, pagination
-  context/           auth context
-  lib/               identity, highlighter
-  pages/             problems, quiz, leaderboard, profile, submissions, admin
-public/              static assets (avatars, favicon)
-scripts/             dev tooling (openapi export)
+    subgraph Evaluation["Sandboxed Judge Engine"]
+        GHCRunner["GHC Runner<br/>(Temporary sandbox, -fno-code typecheck)"]
+        PredictEval["In-Process Choice Evaluator<br/>(Dynamic shuffle & cooldown tracker)"]
+    end
+
+    subgraph Storage["Persistent Storage"]
+        PostgreSQL[("PostgreSQL Database<br/>(Problems, Users, Submissions, Bans)")]
+    end
+
+    UI <--> Shortcuts
+    UI --> ApiClient
+    ApiClient <== "REST / JSON (JWT)" ==> Router
+    Router --> Auth
+    Router --> DBAccess
+    Router --> JudgeDisp
+    JudgeDisp --> GHCRunner
+    JudgeDisp --> PredictEval
+    DBAccess <== "psycopg" ==> PostgreSQL
 ```
+
+## Stack
 
 ## Dev
 
