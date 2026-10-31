@@ -1,0 +1,137 @@
+name: New Problem Proposal
+description: Propose a new problem for MonadBeat
+title: "[Problem]: <Problem Title>"
+labels: ["problem-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing a problem to MonadBeat!
+        Please read our [Problem Specification & Authoring Guide](https://github.com/monadbeat/monadbeat/blob/main/docs/PROBLEM_GUIDE.md) before submitting.
+
+  - type: input
+    id: title
+    attributes:
+      label: Problem Title
+      description: Concise and clear title describing the exercise.
+      placeholder: "e.g., Identify the type of Map.filterWithKey"
+    validations:
+      required: true
+
+  - type: input
+    id: slug
+    attributes:
+      label: Suggested Slug
+      description: Lowercase kebab-case identifier.
+      placeholder: "e.g., map-filterwithkey"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: problem_type
+    attributes:
+      label: Problem Type
+      options:
+        - infer_type
+        - find_function
+        - predict_behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty Level
+      description: "1: <1 min (elementary) | 2: 1-3 min | 3: 3-10 min | 4: 10-30 min | 5: >30 min"
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+    validations:
+      required: true
+
+  - type: input
+    id: category
+    attributes:
+      label: Categories / Tags
+      description: Comma-separated tags.
+      placeholder: "Data.List, sorting, higher-order"
+    validations:
+      required: true
+
+  - type: textarea
+    id: display_content
+    attributes:
+      label: Display Snippet / Code
+      description: |
+        - For `infer_type`: Pure RHS expression to infer (e.g., `Map.filterWithKey`).
+        - For `find_function`: Target type signature (e.g., `[Int] -> [Int]`).
+        - For `predict_behavior`: Standalone snippet to evaluate.
+      render: haskell
+    validations:
+      required: true
+
+  - type: textarea
+    id: scaffold_or_options
+    attributes:
+      label: Scaffold (for infer_type / find_function) or Options (for predict_behavior)
+      description: |
+        - For `infer_type` / `find_function`: Full Haskell scaffold with imports, types, `check1`/`check2`/`ref`, and `{{USER_CODE}}`.
+        - For `predict_behavior`: 3 to 7 options (one per line) and indicate the correct 0-based index.
+      render: haskell
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Reference Solution
+      description: The canonical correct answer for this problem.
+      render: haskell
+    validations:
+      required: true
+
+  - type: input
+    id: ghc_version
+    attributes:
+      label: GHC Version Used for Verification
+      description: Mandatory. Specify the GHC version you used to typecheck or evaluate the code.
+      placeholder: "e.g., GHC 9.6.6 or GHC 9.8.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: ghc_verification
+    attributes:
+      label: GHC Verification Output
+      description: Mandatory. Provide proof that the scaffold and reference solution compile cleanly (or GHC error output when testing an invalid answer).
+      placeholder: |
+        $ ghci
+        GHCi, version 9.6.6: https://www.haskell.org/ghc/  :? for help
+        [1 of 1] Compiling Main ( Solution.hs, interpreted )
+        Ok, one module loaded.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: remark
+    attributes:
+      label: Optional Remark / Hint
+      description: Hints or notes shown to the user if applicable.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Author Checklist
+      options:
+        - label: I have verified this code and scaffold with GHC, and provided the GHC version and verification log above.
+          required: true
+        - label: I have read and followed docs/PROBLEM_GUIDE.md (e.g. pure RHS for infer_type/find_function, explicit forall in standalone type signatures).
+          required: true
+        - label: For find_function, the scaffold does not accept trivial bottoms (undefined / error) and constrains the target signature adequately.
+          required: true
