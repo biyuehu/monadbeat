@@ -6,6 +6,7 @@ import { FilterPanel } from '../components/FilterPanel'
 import { FooterLine, Frame } from '../components/Frame'
 import { LoadingIndicator } from '../components/LoadingIndicator'
 import { Pagination } from '../components/Pagination'
+import { WelcomeBanner } from '../components/WelcomeBanner'
 import { useAuth } from '../context/auth'
 import { useFilter } from '../context/filter'
 import { isInputElement } from '../lib/shortcuts'
@@ -279,6 +280,8 @@ export const Problems = (): JSX.Element => {
           </div>
         </div>
       </div>
+
+      <WelcomeBanner />
 
       <div class="flex items-center justify-between mb-3 px-1 shrink-0">
         <span class="text-xs font-medium uppercase tracking-wider text-strong">📋 All Problems</span>

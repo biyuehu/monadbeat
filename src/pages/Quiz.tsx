@@ -481,6 +481,25 @@ export const Quiz = (): JSX.Element => {
                     }}
                   />
                 </div>
+                <div class="mt-1.5 flex items-center justify-between text-[0.72rem] text-muted px-0.5">
+                  <span class="truncate">
+                    {p.problem_type === 'infer_type' ? (
+                      <>
+                        💡 Standalone signatures require explicit <code class="text-accent">forall</code>.
+                      </>
+                    ) : (
+                      <>💡 Need a hint? Check standard library functions.</>
+                    )}
+                  </span>
+                  <a
+                    href="https://hoogle.haskell.org"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="shrink-0 text-brand hover:underline inline-flex items-center gap-0.5 ml-2"
+                  >
+                    Hoogle ↗
+                  </a>
+                </div>
               </div>
             </Show>
 

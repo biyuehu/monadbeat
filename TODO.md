@@ -41,7 +41,6 @@
 - [x] `public/datas/*.json` are no longer read by the frontend; deleted.
 - [x] Migration to UnoCSS with CSS-variable theming (`uno.config.ts` + `src/index.css`); legacy per-page CSS removed.
 - [x] Admin UI (problem editor, user list, ban management) is not built; admin endpoints are backend-only.
-- [ ] Extract shared utilities / components / helper types where duplicated.
 - [x] No global HTTP error handling; `fetchJson` collapses every non-2xx into a generic `Error`, so 401 / 403 / 404 / 5xx are indistinguishable. Introduce `ApiError { status, detail }` and auto sign-out + redirect on 401 (token expiry / server-side revocation).
 - [x] `currentUser` / token are read from localStorage with a bare `as MeResponse` cast and no runtime validation; a stale cache from an older schema silently flows into the UI (the `role` rename hit this). Validate the stored shape and drop invalid cache.
 - [x] Token expiry is not checked client-side; the UI stays "signed in" until the first 401. Decode the JWT `exp` on write and treat expired tokens as signed out without firing a request.
