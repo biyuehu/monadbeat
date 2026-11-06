@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+
+# Stage 1: Export OpenAPI schema from backend
+FROM python:3.12-slim-bookworm AS openapi
+WORKDIR /app
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY app ./app
+COPY scripts ./scripts
+ENV JWT_SECRET="docker-temporary-jwt-secret-min-32chars"
+RUN uv run python -m scripts.export_openapi
+
+# Stage 2: Build SolidJS SPA with Bun
+FROM oven/bun:1-slim AS builder
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+# Generate TypeScript types from exported OpenAPI schema
+COPY --from=openapi /app/openapi.json ./openapi.json
+RUN bunx openapi-typescript openapi.json -o src/types/api-types.ts
+
+# Copy frontend source and configuration
+COPY . .
+
+# Ensure api-types.ts is in place and build frontend
+COPY --from=openapi /app/openapi.json ./openapi.json
+RUN bunx openapi-typescript openapi.json -o src/types/api-types.ts
+
+ARG VITE_API_BASE=""
+ENV VITE_API_BASE=$VITE_API_BASE
+RUN bunx vite build
+
+# Stage 3: High-performance Caddy Web Server
+FROM caddy:2-alpine
+COPY --from=builder /app/dist /srv/dist
+COPY Caddyfile /etc/caddy/Caddyfile
+
+EXPOSE 80 443

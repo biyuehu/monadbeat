@@ -48,6 +48,36 @@ flowchart TD
 
 ## Stack
 
+## Docker Deployment
+
+The repository includes a production-ready, multi-stage Docker setup orchestrated with Docker Compose:
+- **`backend`**: Python 3.12 + `uv` + `GHC 9.6` isolated sandboxed judge running under a dedicated non-root user.
+- **`web`**: High-performance Caddy server serving the pre-built SolidJS SPA and reverse proxying API endpoints.
+- **`db`**: PostgreSQL 16 Alpine with automatic health checks.
+
+### Quick Start with Docker
+
+```sh
+# 1. Start all services in background
+docker compose up -d --build
+
+# 2. Seed initial problems into database
+docker compose exec backend uv run python -m scripts.seed
+
+# 3. View live logs
+docker compose logs -f
+```
+
+The application is accessible at `http://localhost` (or the configured `PORT`).
+
+### Environment Variables for Docker
+
+Override in your `.env` file or environment:
+- `PORT` — Host port exposed by Caddy (defaults to `80`)
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` — Database credentials
+- `JWT_SECRET` — Secret key for signing auth tokens (minimum 32 characters)
+- `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` — GitHub OAuth credentials (optional)
+
 ## Dev
 
 Requires `uv` (backend) and `bun` (frontend).

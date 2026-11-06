@@ -19,3 +19,15 @@ gen-types:
 
 seed:
   uv run python -m scripts.seed
+
+docker-up:
+  docker compose up -d --build
+
+docker-down:
+  docker compose down
+
+docker-seed:
+  docker compose exec backend uv run python -m scripts.seed
+
+docker-logs:
+  docker compose logs -f
