@@ -9,20 +9,12 @@ export const [bannerDismissed, setBannerDismissed] = createSignal<boolean>(
 
 export const dismissBanner = (): void => {
   setBannerDismissed(true)
-  try {
-    localStorage.setItem(STORAGE_KEY, 'true')
-  } catch {
-    // Ignore storage quota or access errors
-  }
+  localStorage.setItem(STORAGE_KEY, 'true')
 }
 
 export const restoreBanner = (): void => {
   setBannerDismissed(false)
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-  } catch {
-    // Ignore
-  }
+  localStorage.removeItem(STORAGE_KEY)
 }
 
 export const WelcomeBanner = (): JSX.Element => {
