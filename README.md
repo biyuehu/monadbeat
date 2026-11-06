@@ -46,14 +46,28 @@ flowchart TD
     DBAccess <== "psycopg" ==> PostgreSQL
 ```
 
-## Stack
+## Tech Stack
 
-## Docker Deployment
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | [SolidJS](https://www.solidjs.com) 1.9+, [TypeScript](https://www.typescriptlang.org) 5.8+, [UnoCSS](https://unocss.dev), [Vite](https://vite.dev), [Effect-TS](https://effect.website) |
+| **Backend API** | [FastAPI](https://fastapi.tiangolo.com) 0.115+, [SQLModel](https://sqlmodel.tiangolo.com), [Pydantic](https://docs.pydantic.dev) v2, [uv](https://astral.sh/uv), [psycopg3](https://www.psycopg.org) |
+| **Judge Engine** | Sandboxed [GHC](https://www.haskell.org/ghc/) (`-fno-code` type checking, RTS memory & execution time bounds) |
+| **Storage & Gateway** | [PostgreSQL](https://www.postgresql.org) 16, [Caddy](https://caddyserver.com) (Reverse proxy, HTTP/3, automatic HTTPS) |
 
-The repository includes a production-ready, multi-stage Docker setup orchestrated with Docker Compose:
-- **`backend`**: Python 3.12 + `uv` + `GHC 9.6` isolated sandboxed judge running under a dedicated non-root user.
-- **`web`**: High-performance Caddy server serving the pre-built SolidJS SPA and reverse proxying API endpoints.
-- **`db`**: PostgreSQL 16 Alpine with automatic health checks.
+## Documentation & Guides
+
+- 🚀 **[Production Deployment Guide](docs/DEPLOYMENT.md)** — Step-by-step instructions for Docker Compose and standalone artifact (wheel + SPA bundle) deployments, systemd units, Nginx/Caddy configs, and security hardening.
+- 📖 **[Problem Specification & Authoring Guide](docs/PROBLEM_GUIDE.md)** — Problem design principles, scaffold templates, bidirectional type coercion mechanics, and JSON schema specs.
+
+## Deployment
+
+MonadBeat supports two production deployment methods:
+
+1. **Docker Compose (Recommended)**: Orchestrates PostgreSQL, the sandboxed GHC backend, and Caddy web server in isolated containers.
+2. **Standalone Artifacts (Bare Metal / VPS)**: Deploy the backend Python wheel and pre-compiled frontend SPA bundle directly from GitHub Actions CI releases.
+
+👉 For complete setup instructions and custom domain / HTTPS guidance, see the **[Production Deployment Guide](docs/DEPLOYMENT.md)**.
 
 ### Quick Start with Docker
 
@@ -68,11 +82,12 @@ docker compose exec backend uv run python -m scripts.seed
 docker compose logs -f
 ```
 
-The application is accessible at `http://localhost` (or the configured `PORT`).
+The application is accessible at `http://localhost` (or your configured `PORT`).
 
 ### Environment Variables for Docker
 
 Override in your `.env` file or environment:
+
 - `PORT` — Host port exposed by Caddy (defaults to `80`)
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` — Database credentials
 - `JWT_SECRET` — Secret key for signing auth tokens (minimum 32 characters)
@@ -110,12 +125,13 @@ bunx biome check src  # lint
 
 Everything else in `app/config.py` has a working default and can be overridden the same way (`GHC_BINARY`, `GHC_TIMEOUT_SEC`, `GHC_MEMORY_MB`, `MAX_ANSWER_LENGTH`, `SUBMIT_RATE_LIMIT`, `LEADERBOARD_MAX_ENTRIES`, `JWT_ALGORITHM`, `JWT_EXPIRE_MINUTES`).
 
-## Judge
+## Problem Types & Judge Engine
 
-Three problem types are implemented:
+Rather than relying on generic string diffs, MonadBeat leverages GHC's real type checker:
 
-- `infer_type` — user writes a type signature; GHC must accept the assembled file
-- `find_function` — user writes a function body; GHC must type-check it
-- `predict_behavior` — multiple choice, checked in-process
+- **`infer_type`** — Deduce the most general type signature for a given Haskell expression. The judge wraps your input and the reference signature in a bidirectional identity coercion (`id :: CorrectSig -> UserSig` and `UserSig -> CorrectSig`).
+  > *Note*: Standalone signatures require explicit `forall` (e.g. `forall a. [a] -> Int`).
+- **`find_function`** — Implement a function expression matching a target signature. Any mathematically sound Haskell expression is accepted; bottom values (`undefined`, `error`) are strictly prohibited.
+- **`predict_behavior`** — Predict the runtime outcome (values, exceptions, or laziness traps) of expressions involving Weak Head Normal Form (WHNF), `seq`, or infinite data structures without compiler overhead.
 
-`SatisfyLawConfig` and `FixLazinessConfig` are commented out and not scored.
+👉 Read the **[Problem Authoring & Specification Guide](docs/PROBLEM_GUIDE.md)** for detailed problem creation rules, scaffold templates, and JSON schemas.
