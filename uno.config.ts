@@ -56,6 +56,22 @@ export default defineConfig({
     chip: 'px-2.5 py-0.5 text-[0.6rem] tracking-wide whitespace-nowrap truncate max-w-full shrink-0 border border-chip-line text-chip-fg bg-row transition-colors',
     'empty-box': 'flex flex-col items-center justify-center gap-2.5 px-4 py-8 text-center',
     'empty-title': 'text-base font-bold tracking-wide text-accent',
-    'empty-text': 'text-[0.78rem] tracking-wide text-muted'
+    'empty-text': 'text-[0.78rem] tracking-wide text-muted',
+    'btn-sm':
+      'px-3 py-1 text-xs rounded font-semibold cursor-pointer transition-all duration-150 disabled:(opacity-35 cursor-not-allowed grayscale-80)',
+    'btn-xs':
+      'px-2 py-0.5 text-[0.7rem] rounded-[0.2rem] font-medium cursor-pointer transition-all duration-150 disabled:(opacity-35 cursor-not-allowed grayscale-80)',
+    'btn-accent': 'bg-brand-bg text-accent border border-accent hover:not-disabled:(bg-accent text-black)',
+    'btn-muted': 'bg-row text-fg border border-sep hover:not-disabled:(bg-hov border-edge text-white)',
+    'btn-ok': 'bg-ok-bg text-ok border border-ok',
+    'btn-danger': 'bg-err-bg text-err border border-err hover:not-disabled:(bg-err text-white)',
+    'input-field':
+      'bg-panel2 border border-sep text-fg px-2.5 py-1.5 text-xs rounded outline-none transition-colors duration-150 focus:border-accent',
+    'admin-table':
+      'w-full border-collapse text-left [&_th]:(px-3 py-2.5 border-b border-sep text-dim text-[0.7rem] uppercase tracking-wider align-middle) [&_td]:(px-3 py-2.5 border-b border-sep align-middle) [&_tr:hover_td]:bg-row',
+    badge: 'inline-block px-1.5 py-0.5 text-[0.65rem] font-semibold rounded-[0.2rem] uppercase',
+    'badge-super': 'bg-[rgba(183,121,31,0.2)] text-[var(--role-super)] border border-[var(--role-super)]',
+    'badge-admin': 'bg-[rgba(3,105,161,0.2)] text-[var(--role-admin)] border border-[var(--role-admin)]',
+    'badge-user': 'bg-row text-dim border border-sep'
   }
 })
