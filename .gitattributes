@@ -1,3 +1,2 @@
 src/styles/*.css linguist-detectable=false
-*.ts linguist-detectable=false
-src/components/*.ts linguist-detectable=true
+src/**/*.ts linguist-detectable=false
