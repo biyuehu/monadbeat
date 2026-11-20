@@ -72,7 +72,7 @@ jobs:
           bun-version: latest
 
       - name: Install frontend dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Biome check (Lint & Format)
         run: bun run lint

@@ -8,14 +8,13 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY app ./app
 COPY scripts ./scripts
-ENV JWT_SECRET="docker-temporary-jwt-secret-min-32chars"
-RUN uv run python -m scripts.export_openapi
+RUN JWT_SECRET="docker-temporary-jwt-secret-min-32chars" uv run --no-dev python -m scripts.export_openapi
 
 # Stage 2: Build SolidJS SPA with Bun
 FROM oven/bun:1-slim AS builder
 WORKDIR /app
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --ignore-scripts
 
 # Generate TypeScript types from exported OpenAPI schema
 COPY --from=openapi /app/openapi.json ./openapi.json
