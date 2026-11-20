@@ -1,7 +1,7 @@
 {
   "name": "monadbeat",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "gen-types": "uv run python -m scripts.export_openapi && bunx openapi-typescript openapi.json -o src/types/api-types.ts",
